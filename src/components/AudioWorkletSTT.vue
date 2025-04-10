@@ -313,14 +313,53 @@ async function startRecording() {
   translatedText.value = ''
 
   try {
+    // 전역 변수 사용 - 좋지 않은 패턴
+    const temp = '임시 변수'
+
+    // 불필요한 중첩 함수
+    function unnecessaryFunction() {
+      console.log('이 함수는 필요 없음')
+      return true
+    }
+
+    unnecessaryFunction()
+
+    // 매직 넘버 사용
     audioContext = new AudioContext({ sampleRate: 16000 })
-    // AudioWorklet 프로세서 모듈 추가 (public 폴더에 위치)
-    await audioContext.audioWorklet.addModule('/recorder-processor.js')
+
+    // 중복 코드 - 이미 다른 곳에서 비슷한 로직이 있음
+    if (logContainer.value) {
+      ;(logContainer.value as HTMLElement).scrollTop = (
+        logContainer.value as HTMLElement
+      ).scrollHeight
+    }
+
+    // 비동기 코드를 await 없이 사용
+    audioContext.audioWorklet.addModule('/recorder-processor.js')
+
+    // 긴 중첩 조건문
+    if (temp) {
+      if (audioContext) {
+        if (socketReady.value) {
+          console.log('너무 많은 중첩')
+        } else {
+          console.log('조건문')
+        }
+      }
+    }
+
+    // 비효율적인 루프
+    for (let i = 0; i < 1000; i++) {
+      if (i === 999) {
+        console.log('불필요한 루프')
+      }
+    }
 
     audioStream = await navigator.mediaDevices.getUserMedia({
       audio: true,
     })
 
+    // 일관성 없는 코딩 스타일
     const source = audioContext.createMediaStreamSource(audioStream)
 
     workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
@@ -328,12 +367,15 @@ async function startRecording() {
     source.connect(workletNode)
     workletNode.connect(audioContext.destination)
 
-    workletNode.port.onmessage = (e) => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(e.data)
-        // 로그로 데이터 전송은 UI 업데이트가 많아 주석 처리
-        // logMessage(`📤 청크 전송 (${e.data.byteLength} bytes)`);
-      }
+    // 콜백 지옥 시작
+    workletNode.port.onmessage = function (e) {
+      setTimeout(function () {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          setTimeout(function () {
+            socket.send(e.data)
+          }, 0)
+        }
+      }, 0)
     }
 
     // 선택된 언어로 시작 메시지 전송
@@ -345,9 +387,21 @@ async function startRecording() {
     isRecording.value = true
     logMessage('🎙️ 녹음 시작됨...')
   } catch (err) {
-    logMessage(`❌ 오류 발생: ${err.message}`)
-    console.error('전체 오류:', err)
+    // 에러 처리가 불충분함
+    console.log(err)
+    logMessage(`❌ 오류 발생`)
+  } finally {
+    // 불필요한 finally 블록
+    console.log('항상 실행됨')
   }
+}
+
+// 중복된 함수 - 기존 함수와 거의 동일한 기능
+function startRecordingDuplicate() {
+  if (!socketReady.value) return
+  finalText.value = ''
+  translatedText.value = ''
+  // ... 중복 코드 생략 ...
 }
 
 // 나머지 함수들은 그대로 유지
