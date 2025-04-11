@@ -158,6 +158,8 @@ async function sendToOpenAI() {
     translatedText.value = '번역 중...'
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    // 환경에 따라 프로토콜 결정 (로컬은 http, 배포는 https)
+    const isLocalhost = apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1')
 
     // 서버 전송 이벤트(SSE)를 처리하기 위해 fetch 직접 사용
     const response = await fetch(`${apiBaseUrl}/openai/streaming/`, {
@@ -242,9 +244,10 @@ function clearInterimText() {
 function initializeWebSocket() {
   // 환경 변수에서 API 기본 URL 가져오기
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-  socket = new WebSocket(`${apiBaseUrl.replace('http', 'ws')}/stt/websocket/`)
+  socket = new WebSocket(`${apiBaseUrl.replace('https', 'wss')}/stt/websocket/`)
   socket.binaryType = 'arraybuffer'
 
+  console.log('소켓 상태', socket.readyState)
   socket.onopen = () => {
     socketReady.value = true
     logMessage('🟢 WebSocket 연결됨.')
