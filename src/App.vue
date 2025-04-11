@@ -4,8 +4,8 @@ import AudioWorkletSTT from './components/AudioWorkletSTT.vue'
 
 <template>
   <header>
-    <RouterLink to="/">Home</RouterLink>
-    <RouterLink to="/about">About</RouterLink>
+    <!-- <RouterLink to="/">Home</RouterLink>
+    <RouterLink to="/about">About</RouterLink> -->
     <!-- </nav>
     </div> -->
   </header>

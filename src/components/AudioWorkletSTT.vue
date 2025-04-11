@@ -150,7 +150,7 @@ function scrollToBottom() {
 }
 
 // OpenAI API로 데이터 전송 함수
-async function sendToOpenAI(text: string) {
+async function sendToOpenAI() {
   try {
     logMessage(`🔄 OpenAI API로 데이터 전송 중...`)
 
@@ -218,16 +218,16 @@ async function sendToOpenAI(text: string) {
               }
             }
           }
-        } catch (error) {
-          logMessage(`❌ 스트림 처리 오류: ${error.message}`)
+        } catch (error: unknown) {
+          logMessage(`❌ 스트림 처리 오류: ${(error as Error).message}`)
         }
       }
 
       // 스트림 처리 시작
       processStream()
     }
-  } catch (error: any) {
-    logMessage(`❌ OpenAI API 오류: ${error.message}`)
+  } catch (error: unknown) {
+    logMessage(`❌ OpenAI API 오류: ${(error as Error).message}`)
     console.error('OpenAI API 오류:', error)
     translatedText.value = '번역 중 오류가 발생했습니다.'
   }
@@ -267,7 +267,7 @@ function initializeWebSocket() {
           addFinalText(data.text)
 
           // 최종 결과를 OpenAI API로 전송
-          sendToOpenAI(data.text)
+          sendToOpenAI()
           break
 
         case 'system':
@@ -286,13 +286,13 @@ function initializeWebSocket() {
           clearInterimText()
           break
       }
-    } catch (error: any) {
-      logMessage(`❌ 메시지 파싱 오류: ${error.message}`)
+    } catch (error: unknown) {
+      logMessage(`❌ 메시지 파싱 오류: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
-  socket.onerror = (error: any) => {
-    logMessage(`❌ WebSocket 오류: ${error.message}`)
+  socket.onerror = (error: unknown) => {
+    logMessage(`❌ WebSocket 오류: ${error instanceof Error ? error.message : String(error)}`)
   }
 
   socket.onclose = (event) => {
@@ -336,16 +336,22 @@ async function startRecording() {
       }
     }
 
-    // 선택된 언어로 시작 메시지 전송
-    socket.send(JSON.stringify({ type: 'start', lang: selectedLanguage.value }))
-    logMessage(
-      `📤 'start' 메시지 전송 완료 (언어: ${selectedLanguage.value}, 번역 언어: ${translatedLanguage.value})`,
-    )
+    // socket이 null이 아닌지 확인 후 메시지 전송
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'start', lang: selectedLanguage.value }))
+      logMessage(
+        `📤 'start' 메시지 전송 완료 (언어: ${selectedLanguage.value}, 번역 언어: ${translatedLanguage.value})`,
+      )
+    } else {
+      throw new Error('WebSocket 연결이 활성화되지 않았습니다.')
+    }
 
     isRecording.value = true
     logMessage('🎙️ 녹음 시작됨...')
-  } catch (err) {
-    logMessage(`❌ 오류 발생: ${err.message}`)
+  } catch (err: unknown) {
+    // err를 unknown 타입으로 명시적 지정 후 타입 가드 사용
+    const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류'
+    logMessage(`❌ 오류 발생: ${errorMessage}`)
     console.error('전체 오류:', err)
   }
 }
@@ -371,7 +377,7 @@ function stopRecording() {
       logMessage(
         `📤 최종 텍스트를 OpenAI API로 전송합니다. (${selectedLanguage.value} → ${translatedLanguage.value})`,
       )
-      sendToOpenAI(finalText.value)
+      sendToOpenAI()
     }
   }
 
