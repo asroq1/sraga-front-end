@@ -13,6 +13,7 @@ export const api = {
   },
 
   // POST 요청
+
   async post(endpoint: string, data: Record<string, unknown>) {
     const response = await fetch(`${apiBaseUrl}${endpoint}`, {
       method: 'POST',
@@ -24,6 +25,30 @@ export const api = {
     if (!response.ok) {
       throw new Error(`API 오류: ${response.status}`)
     }
+    return response.json()
+  },
+
+  // 파일 업로드 요청
+  async uploadFile(endpoint: string, file: File, additionalData?: Record<string, string>) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // 추가 데이터가 있으면 FormData에 추가
+    if (additionalData) {
+      Object.entries(additionalData).forEach(([key, value]) => {
+        formData.append(key, value)
+      })
+    }
+
+    const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`)
+    }
+
     return response.json()
   },
 
@@ -41,5 +66,23 @@ export const translationApi = {
       lang: targetLang,
       message: text,
     })
+  },
+}
+
+// 영수증 관련 API 함수
+export const receiptApi = {
+  // 영수증 이미지 업로드 및 분석
+  async uploadAndAnalyze(file: File) {
+    return api.uploadFile('/receipt/upload/', file)
+  },
+
+  // 영수증 목록 가져오기
+  async getReceiptList() {
+    return api.get('/receipt/list/')
+  },
+
+  // 영수증 상세 정보 가져오기
+  async getReceiptDetail(id: string) {
+    return api.get(`/receipt/${id}/`)
   },
 }
