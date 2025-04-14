@@ -13,7 +13,7 @@ export const api = {
   },
 
   // POST 요청
-  async post(endpoint: string, data: Record<string, unknown>) {
+
   async post(endpoint: string, data: Record<string, unknown>) {
     const response = await fetch(`${apiBaseUrl}${endpoint}`, {
       method: 'POST',
@@ -55,7 +55,6 @@ export const api = {
   // WebSocket 연결 생성
   createWebSocket(endpoint: string) {
     return new WebSocket(`${apiBaseUrl.replace('http', 'ws')}${endpoint}`)
-  },
   },
 }
 
