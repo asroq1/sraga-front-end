@@ -13,7 +13,7 @@ export const api = {
   },
 
   // POST 요청
-  async post(endpoint: string, data: any) {
+  async post(endpoint: string, data: Record<string, unknown>) {
     const response = await fetch(`${apiBaseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -30,7 +30,7 @@ export const api = {
   // WebSocket 연결 생성
   createWebSocket(endpoint: string) {
     return new WebSocket(`${apiBaseUrl.replace('http', 'ws')}${endpoint}`)
-  }
+  },
 }
 
 // 번역 관련 API 함수
@@ -41,5 +41,5 @@ export const translationApi = {
       lang: targetLang,
       message: text,
     })
-  }
+  },
 }
