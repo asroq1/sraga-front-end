@@ -13,7 +13,8 @@
     "lint:eslint": "eslint . --fix",
     "lint": "run-s lint:*",
     "format": "prettier --write src/",
-    "prepare": "husky install"
+    "prepare": "husky",
+    "build:production": "vite build --mode production"
   },
   "dependencies": {
     "pinia": "^3.0.1",
