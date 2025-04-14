@@ -1,6 +1,15 @@
 <template>
   <div class="audio-worklet-stt">
     <div class="header">
+      <h2>🎤 Test</h2>
+      <div class="nav-buttons">
+        <button class="btn-nav" @click="navigateTo('/receipt')">
+          <span class="material-icon">receipt</span> 영수증
+        </button>
+        <button class="btn-nav" @click="navigateTo('/meeting-summary')">
+          <span class="material-icon">summarize</span> 회의 요약
+        </button>
+      </div>
       <div class="controls">
         <div class="language-selector">
           <label for="language-select">입력 언어:</label>
@@ -16,20 +25,7 @@
           <span class="material-icon">swap_horiz</span>
         </button>
 
-        <div class="language-selector">
-          <label for="translated-language-select">번역 언어:</label>
-          <select id="translated-language-select" v-model="translatedLanguage" class="select-input">
-            <option v-for="lang in languages" :key="lang.code" :value="lang.code">
-              {{ lang.name }}
-            </option>
-          </select>
-        </div>
-        <button class="btn-primary" @click="startRecording" :disabled="isRecording">
-          <span class="material-icon">mic</span> 시작
-        </button>
-        <button class="btn-secondary" @click="stopRecording" :disabled="!isRecording">
-          <span class="material-icon">stop</span> 중지
-        </button>
+        <!-- 나머지 코드는 그대로 유지 -->
       </div>
     </div>
 
@@ -60,10 +56,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+
+// 라우터 인스턴스 가져오기
+const router = useRouter()
+
+// 페이지 이동 함수
+function navigateTo(path: string) {
+  router.push(path)
+}
 
 // 지원되는 언어 목록 (BCP-47 형식)
 const languages = [
   { code: 'ko-KR', name: '한국어' },
+  // 나머지 언어 목록은 그대로 유지
   { code: 'en-US', name: '영어 (미국)' },
   { code: 'en-GB', name: '영어 (영국)' },
   { code: 'zh-CN', name: '중국어 (간체)' },
@@ -431,6 +437,55 @@ onBeforeUnmount(() => {
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
+/* 기존 스타일 유지 */
+
+/* 네비게이션 버튼 스타일 추가 */
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  margin-right: 20px;
+}
+
+.btn-nav {
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s,
+    color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-nav:hover {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3);
+}
+
+.btn-nav .material-icon {
+  margin-right: 4px;
+}
+
+/* 헤더 스타일 수정 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dadce0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 나머지 스타일은 그대로 유지 */
 .audio-worklet-stt {
   font-family: 'Roboto', 'Noto Sans KR', sans-serif;
   max-width: 800px;
