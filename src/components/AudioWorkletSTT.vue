@@ -1,7 +1,6 @@
 <template>
   <div class="audio-worklet-stt">
     <div class="header">
-      <h2>🎤 AudioWorklet 기반 STT</h2>
       <div class="controls">
         <div class="language-selector">
           <label for="language-select">입력 언어:</label>
@@ -11,6 +10,12 @@
             </option>
           </select>
         </div>
+
+        <!-- 언어 교환 버튼 추가 -->
+        <button class="btn-icon" @click="switchLanguages" title="언어 교환">
+          <span class="material-icon">swap_horiz</span>
+        </button>
+
         <div class="language-selector">
           <label for="translated-language-select">번역 언어:</label>
           <select id="translated-language-select" v-model="translatedLanguage" class="select-input">
@@ -81,6 +86,20 @@ const languages = [
 const selectedLanguage = ref('ko-KR')
 // 번역 대상 언어 (기본값: 영어)
 const translatedLanguage = ref('en-US')
+
+// 언어 교환 함수 추가
+function switchLanguages() {
+  // 현재 값 임시 저장
+  const tempLang = selectedLanguage.value
+  // 입력 언어를 번역 언어로 설정
+  selectedLanguage.value = translatedLanguage.value
+  // 번역 언어를 입력 언어로 설정
+  translatedLanguage.value = tempLang
+
+  logMessage(
+    `🔄 언어 교환: 입력 언어=${selectedLanguage.value}, 번역 언어=${translatedLanguage.value}`,
+  )
+}
 
 // 기존 상태 변수들
 const isRecording = ref(false)
