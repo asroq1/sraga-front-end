@@ -29,6 +29,6 @@ coverage
 
 *.tsbuildinfo
 
-# Volar 임시 파일
+# Volar temporary files
 **/*.vue.js
 **/*.vue.ts

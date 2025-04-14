@@ -1,2 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+#!/bin/sh
 npm run lint
+npm run lint:cleanup
 npm run type-check
