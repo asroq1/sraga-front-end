@@ -32,3 +32,7 @@ coverage
 # Volar temporary files
 **/*.vue.js
 **/*.vue.ts
+
+# Volar 임시 파일
+**/*.vue.js
+**/*.vue.ts
