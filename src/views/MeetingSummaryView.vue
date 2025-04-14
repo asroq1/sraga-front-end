@@ -36,9 +36,9 @@ async function generateSummary() {
 
     const data = await response.json()
     summaryResult.value = data.summary
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('요약 오류:', error)
-    errorMessage.value = `요약 실패: ${error.message}`
+    errorMessage.value = `요약 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
     summaryResult.value = null
   } finally {
     isProcessing.value = false

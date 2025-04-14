@@ -10,7 +10,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint:oxlint": "oxlint . --fix -D correctness --ignore-path .gitignore",
-    "lint:eslint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "lint:eslint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "lint:cleanup": "find src -name \"*.vue.js\" -o -name \"*.vue.ts\" | xargs rm -f",
     "lint": "run-s lint:*",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false"
