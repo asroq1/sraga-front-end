@@ -83,5 +83,5 @@ export const receiptApi = {
   // 영수증 상세 정보 가져오기
   async getReceiptDetail(id: string) {
     return api.get(`/receipt/${id}/`)
-  },
+  }
 }

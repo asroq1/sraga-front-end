@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+// import { api } from '../services/api'
 
 // 상태 변수들
 const selectedFile = ref<File | null>(null)
@@ -8,7 +9,7 @@ const uploadStatus = ref<string>('')
 const isUploading = ref(false)
 interface ReceiptItem {
   name: string
-  quantity: number
+  quantity?: number
   price: number
 }
 
