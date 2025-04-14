@@ -121,7 +121,7 @@ const translatedText = ref('')
 let socket: WebSocket | null = null
 let audioContext: AudioContext | null = null
 let audioStream: MediaStream | null = null
-let workletNode = null
+// const workletNode = null
 
 // 로그 메시지 추가 함수
 function logMessage(message: string) {
@@ -184,7 +184,7 @@ async function sendToOpenAI() {
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
     // 환경에 따라 프로토콜 결정 (로컬은 http, 배포는 https)
-    const isLocalhost = apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1')
+    // const isLocalhost = apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1')
 
     // 서버 전송 이벤트(SSE)를 처리하기 위해 fetch 직접 사용
     const response = await fetch(`${apiBaseUrl}/openai/streaming/`, {
@@ -330,59 +330,59 @@ function initializeWebSocket() {
 }
 
 // 녹음 시작 함수
-async function startRecording() {
-  if (!socketReady.value) {
-    logMessage('❌ WebSocket 연결이 안 됨!')
-    return
-  }
+// async function startRecording() {
+//   if (!socketReady.value) {
+//     logMessage('❌ WebSocket 연결이 안 됨!')
+//     return
+//   }
 
-  // 녹음 시작 시 이전 결과 초기화
-  finalText.value = ''
-  translatedText.value = ''
+//   // 녹음 시작 시 이전 결과 초기화
+//   finalText.value = ''
+//   translatedText.value = ''
 
-  try {
-    audioContext = new AudioContext({ sampleRate: 16000 })
-    // AudioWorklet 프로세서 모듈 추가 (public 폴더에 위치)
-    await audioContext.audioWorklet.addModule('/recorder-processor.js')
+//   try {
+//     audioContext = new AudioContext({ sampleRate: 16000 })
+//     // AudioWorklet 프로세서 모듈 추가 (public 폴더에 위치)
+//     await audioContext.audioWorklet.addModule('/recorder-processor.js')
 
-    audioStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    })
+//     audioStream = await navigator.mediaDevices.getUserMedia({
+//       audio: true,
+//     })
 
-    const source = audioContext.createMediaStreamSource(audioStream)
+//     const source = audioContext.createMediaStreamSource(audioStream)
 
-    workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
+//     workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
 
-    source.connect(workletNode)
-    workletNode.connect(audioContext.destination)
+//     source.connect(workletNode)
+//     workletNode.connect(audioContext.destination)
 
-    workletNode.port.onmessage = (e) => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(e.data)
-        // 로그로 데이터 전송은 UI 업데이트가 많아 주석 처리
-        // logMessage(`📤 청크 전송 (${e.data.byteLength} bytes)`);
-      }
-    }
+//     workletNode.port.onmessage = (e) => {
+//       if (socket && socket.readyState === WebSocket.OPEN) {
+//         socket.send(e.data)
+//         // 로그로 데이터 전송은 UI 업데이트가 많아 주석 처리
+//         // logMessage(`📤 청크 전송 (${e.data.byteLength} bytes)`);
+//       }
+//     }
 
-    // socket이 null이 아닌지 확인 후 메시지 전송
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: 'start', lang: selectedLanguage.value }))
-      logMessage(
-        `📤 'start' 메시지 전송 완료 (언어: ${selectedLanguage.value}, 번역 언어: ${translatedLanguage.value})`,
-      )
-    } else {
-      throw new Error('WebSocket 연결이 활성화되지 않았습니다.')
-    }
+//     // socket이 null이 아닌지 확인 후 메시지 전송
+//     if (socket && socket.readyState === WebSocket.OPEN) {
+//       socket.send(JSON.stringify({ type: 'start', lang: selectedLanguage.value }))
+//       logMessage(
+//         `📤 'start' 메시지 전송 완료 (언어: ${selectedLanguage.value}, 번역 언어: ${translatedLanguage.value})`,
+//       )
+//     } else {
+//       throw new Error('WebSocket 연결이 활성화되지 않았습니다.')
+//     }
 
-    isRecording.value = true
-    logMessage('🎙️ 녹음 시작됨...')
-  } catch (err: unknown) {
-    // err를 unknown 타입으로 명시적 지정 후 타입 가드 사용
-    const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류'
-    logMessage(`❌ 오류 발생: ${errorMessage}`)
-    console.error('전체 오류:', err)
-  }
-}
+//     isRecording.value = true
+//     logMessage('🎙️ 녹음 시작됨...')
+//   } catch (err: unknown) {
+//     // err를 unknown 타입으로 명시적 지정 후 타입 가드 사용
+//     const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류'
+//     logMessage(`❌ 오류 발생: ${errorMessage}`)
+//     console.error('전체 오류:', err)
+//   }
+// }
 
 // 나머지 함수들은 그대로 유지
 function stopRecording() {
