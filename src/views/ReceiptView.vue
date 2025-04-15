@@ -2,11 +2,13 @@
 import { ref, onMounted } from 'vue'
 // import { api } from '../services/api'
 
-// 상태 변수들
+// 상태 변수들 부분에 docxUrl 추가
 const selectedFile = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
 const uploadStatus = ref<string>('')
 const isUploading = ref(false)
+const docxUrl = ref<string | null>(null) // 문서 다운로드 URL
+
 interface ReceiptItem {
   name: string
   quantity?: number
@@ -43,22 +45,34 @@ function handleFileSelect(event: Event) {
 }
 
 // 파일 업로드 함수
+// uploadReceipt 함수 수정
 async function uploadReceipt() {
   if (!selectedFile.value) {
     uploadStatus.value = '파일을 선택해주세요.'
     return
   }
 
+  // Get scriptId and sraga_name from localStorage
+  const userId = localStorage.getItem('userId')
+  const name = localStorage.getItem('sraga_name') || 'test'
+
+  if (!userId || !name) {
+    uploadStatus.value = '사용자 정보가 없습니다.'
+    return
+  }
+
   try {
     isUploading.value = true
     uploadStatus.value = '업로드 중...'
+    docxUrl.value = null // 초기화
 
     const formData = new FormData()
-    formData.append('file', selectedFile.value)
+    formData.append('files', selectedFile.value)
+    formData.append('user_id', userId)
+    formData.append('name', name)
 
-    // API 엔드포인트 호출
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-    const response = await fetch(`${apiBaseUrl}/receipt/upload/`, {
+    const response = await fetch(`${apiBaseUrl}/receipt/upload`, {
       method: 'POST',
       body: formData,
     })
@@ -67,9 +81,28 @@ async function uploadReceipt() {
       throw new Error(`API 오류: ${response.status}`)
     }
 
-    const data = await response.json()
-    receiptData.value = data
-    uploadStatus.value = '업로드 성공!'
+    // 응답 헤더에서 파일명 추출
+    const contentDisposition = response.headers.get('content-disposition')
+    let filename = 'expense_report.docx'
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1]
+      }
+    }
+
+    // Blob 생성 및 다운로드 URL 설정
+    const blob = await response.blob()
+    docxUrl.value = URL.createObjectURL(blob)
+
+    // JSON 데이터가 있는 경우 처리 (서버 응답이 JSON인 경우)
+    if (response.headers.get('content-type')?.includes('application/json')) {
+      const data = await response.json()
+      receiptData.value = data
+    }
+    // 성공 메시지 추가
+    uploadStatus.value = '업로드 성공! 분석이 완료되었습니다.'
   } catch (error: unknown) {
     console.error('업로드 오류:', error)
     uploadStatus.value = `업로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
@@ -78,12 +111,30 @@ async function uploadReceipt() {
   }
 }
 
-// 파일 선택 취소
+// 파일 선택 취소 함수 수정
 function clearSelection() {
   selectedFile.value = null
   previewUrl.value = null
   uploadStatus.value = ''
   receiptData.value = null
+
+  // docxUrl이 있으면 해제
+  if (docxUrl.value) {
+    URL.revokeObjectURL(docxUrl.value)
+    docxUrl.value = null
+  }
+}
+
+// 문서 다운로드 함수 추가
+function downloadDocument() {
+  if (!docxUrl.value) return
+
+  const a = document.createElement('a')
+  a.href = docxUrl.value
+  a.download = 'expense_report.docx'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
 }
 
 // 컴포넌트 마운트 시 초기화
@@ -142,9 +193,35 @@ onMounted(() => {
     <div
       v-if="uploadStatus"
       class="status-message"
-      :class="{ error: uploadStatus.includes('실패') }"
+      :class="{
+        error: uploadStatus.includes('실패'),
+        loading: uploadStatus.includes('업로드 중'),
+        success: uploadStatus.includes('성공'),
+      }"
     >
-      {{ uploadStatus }}
+      <span class="status-icon material-icon">
+        {{
+          uploadStatus.includes('실패')
+            ? 'error'
+            : uploadStatus.includes('업로드 중')
+              ? 'hourglass_top'
+              : uploadStatus.includes('성공')
+                ? 'check_circle'
+                : 'info'
+        }}
+      </span>
+      <span class="status-text">{{ uploadStatus }}</span>
+      <div v-if="uploadStatus.includes('업로드 중')" class="loading-spinner"></div>
+    </div>
+
+    <!-- 문서 다운로드 섹션 추가 -->
+    <div v-if="docxUrl" class="document-download">
+      <div class="download-card">
+        <button class="btn-download" @click="downloadDocument">
+          <span class="material-icon">download</span>
+          다운로드
+        </button>
+      </div>
     </div>
 
     <div v-if="receiptData" class="receipt-data">
@@ -197,45 +274,55 @@ onMounted(() => {
   text-align: center;
 }
 
+.header h2 {
+  color: var(--color-text);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
 .description {
-  color: #666;
-  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 16px;
 }
 
 .upload-container {
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
   padding: 24px;
   margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
 }
 
 .file-input-wrapper {
-  margin-bottom: 16px;
+  position: relative;
 }
 
 .file-input-wrapper input[type='file'] {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .file-input-label {
   display: inline-flex;
   align-items: center;
-  background-color: #4a90e2;
-  color: white;
-  padding: 10px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
   transition: background-color 0.2s;
+  cursor: pointer; /* 추가: 커서를 포인터로 변경 */
 }
 
 .file-input-label:hover {
-  background-color: #3a80d2;
-}
-
-.material-icon {
-  margin-right: 8px;
-  font-size: 20px;
+  background-color: var(--color-primary-dark);
 }
 
 .selected-file {
@@ -243,82 +330,23 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-top: 12px;
-  padding: 8px 12px;
-  background-color: #e8f0fe;
-  border-radius: 4px;
-}
-
-.preview-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  padding: 12px;
+  background-color: var(--color-background);
+  border-radius: var(--radius-sm);
 }
 
 .image-preview {
-  max-width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  margin-top: 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-.image-preview img {
-  max-width: 100%;
-  display: block;
-}
-
-.actions {
-  display: flex;
-  justify-content: center;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background-color: #3d9c40;
-}
-
-.btn-primary:disabled {
-  background-color: #a5d6a7;
-  cursor: not-allowed;
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 4px;
-}
-
-.status-message {
-  padding: 12px;
-  margin-bottom: 20px;
-  border-radius: 4px;
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-message.error {
-  background-color: #ffebee;
-  color: #c62828;
-}
-
 .receipt-data {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
 }
 
 .data-section {
@@ -326,59 +354,127 @@ onMounted(() => {
 }
 
 .data-section h4 {
-  margin-bottom: 12px;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .data-item {
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .label {
-  width: 80px;
-  font-weight: 500;
-  color: #555;
+  width: 100px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
-.items-list {
+.items-list .item {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: var(--color-background);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.document-download {
+  margin: 24px 0;
+}
+
+.download-card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-download {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.item {
+.btn-download:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.status-message {
   display: flex;
-  justify-content: space-between;
-  padding: 8px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  margin-bottom: 20px;
 }
 
-.item-name {
+.status-message.loading {
+  background-color: #e3f2fd;
+  color: var(--color-primary);
+}
+
+.status-message.success {
+  background-color: #e8f5e9;
+  color: var(--color-success);
+}
+
+.status-message.error {
+  background-color: #ffebee;
+  color: var(--color-error);
+}
+
+.status-icon {
+  font-size: 24px;
+}
+
+.status-text {
   flex: 1;
-}
-
-.item-quantity {
-  width: 60px;
-  text-align: center;
-}
-
-.item-price {
-  width: 100px;
-  text-align: right;
   font-weight: 500;
 }
 
-.raw-text {
-  background-color: #f5f5f5;
-  padding: 12px;
-  border-radius: 4px;
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 14px;
-  max-height: 200px;
-  overflow-y: auto;
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .receipt-view {
+    padding: 16px;
+  }
+
+  .upload-container {
+    padding: 16px;
+  }
+
+  .receipt-data {
+    padding: 16px;
+  }
 }
 </style>

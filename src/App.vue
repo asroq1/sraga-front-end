@@ -7,7 +7,6 @@ import AudioWorkletSTT from './components/AudioWorkletSTT.vue'
 const route = useRoute()
 const router = useRouter()
 
-// 현재 활성화된 탭 계산
 const activeTab = computed(() => {
   if (route.path === '/') return 'home'
   if (route.path === '/receipt') return 'receipt'
@@ -15,7 +14,6 @@ const activeTab = computed(() => {
   return 'home'
 })
 
-// 탭 변경 함수
 function navigateTo(path: string) {
   router.push(path)
 }
@@ -24,15 +22,12 @@ function navigateTo(path: string) {
 <template>
   <div class="app-container">
     <main class="main-content">
-      <!-- 홈 페이지에서만 AudioWorkletSTT 표시 -->
-      <AudioWorkletSTT v-if="route.path === '/'" />
-
-      <!-- 라우터 뷰 -->
+      <AudioWorkletSTT v-if="route.path === '/' && route.name !== 'login'" />
       <RouterView />
     </main>
 
-    <!-- 하단 네비게이션 바 -->
-    <nav class="bottom-nav">
+    <!-- Only show navigation when user is authenticated -->
+    <nav v-if="route.name !== 'login'" class="bottom-nav">
       <button class="nav-item" :class="{ active: activeTab === 'home' }" @click="navigateTo('/')">
         <span class="material-icon">home</span>
         <span class="nav-label">홈</span>
