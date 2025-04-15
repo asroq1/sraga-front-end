@@ -1,4 +1,4 @@
-class RecorderProcessor extends AudioWorkletProcessor {
+class RecorderProcessor extends globalThis.AudioWorkletProcessor {
   constructor() {
     super()
     this.buffer = []
@@ -24,4 +24,4 @@ class RecorderProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor('recorder-processor', RecorderProcessor)
+globalThis.registerProcessor('recorder-processor', RecorderProcessor)

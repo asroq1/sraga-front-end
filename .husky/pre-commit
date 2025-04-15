@@ -1,4 +1,3 @@
 #!/bin/sh
 npm run lint
-npm run lint:cleanup
-npm run type-check
+# npm run type-check

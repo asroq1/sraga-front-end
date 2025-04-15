@@ -245,7 +245,8 @@ async function sendToOpenAI() {
       // 스트림 읽기 함수
       const processStream = async () => {
         try {
-          while (true) {
+          let isProcessing = true
+          while (isProcessing) {
             const { done, value } = await reader.read()
 
             if (done) {
