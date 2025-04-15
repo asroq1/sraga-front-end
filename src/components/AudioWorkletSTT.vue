@@ -200,6 +200,7 @@ function scrollToBottom() {
 }
 
 // OpenAI API로 데이터 전송 함수
+// sendToOpenAI 함수 내부 수정
 async function sendToOpenAI() {
   try {
     logMessage(`🔄 OpenAI API로 데이터 전송 중...`)
