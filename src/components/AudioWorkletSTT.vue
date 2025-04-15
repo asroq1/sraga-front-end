@@ -79,8 +79,21 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 // }
 
 // 나머지 코드는 그대로 유지
+// useRouter 제거 (사용하지 않음)
+// import { useRouter } from 'vue-router'
+
+// 라우터 인스턴스 제거
+// const router = useRouter()
+
+// 페이지 이동 함수 제거
+// function navigateTo(path: string) {
+//   router.push(path)
+// }
+
+// 나머지 코드는 그대로 유지
 const languages = [
   { code: 'ko-KR', name: '한국어' },
+  // 나머지 언어 목록은 그대로 유지
   // 나머지 언어 목록은 그대로 유지
   { code: 'en-US', name: '영어 (미국)' },
   { code: 'en-GB', name: '영어 (영국)' },
@@ -133,7 +146,7 @@ const translatedText = ref('')
 let socket: WebSocket | null = null
 let audioContext: AudioContext | null = null
 let audioStream: MediaStream | null = null
-let workletNode: AudioWorkletNode | null = null
+// const workletNode: AudioWorkletNode | null = null
 
 // 로그 메시지 추가 함수
 function logMessage(message: string) {
@@ -370,7 +383,7 @@ async function startRecording() {
 
     const source = audioContext.createMediaStreamSource(audioStream)
 
-    workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
+    const workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
 
     source.connect(workletNode)
     workletNode.connect(audioContext.destination)
