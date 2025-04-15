@@ -1,6 +1,8 @@
 <template>
   <div class="audio-worklet-stt">
     <div class="header">
+      <h2>🎤 Test</h2>
+      <div class="nav-buttons"></div>
       <div class="controls">
         <div class="language-selector">
           <label for="language-select">입력 언어:</label>
@@ -16,9 +18,14 @@
           <span class="material-icon">swap_horiz</span>
         </button>
 
+        <!-- 번역 언어 선택기 추가 -->
         <div class="language-selector">
-          <label for="translated-language-select">번역 언어:</label>
-          <select id="translated-language-select" v-model="translatedLanguage" class="select-input">
+          <label for="translation-language-select">번역 언어:</label>
+          <select
+            id="translation-language-select"
+            v-model="translatedLanguage"
+            class="select-input"
+          >
             <option v-for="lang in languages" :key="lang.code" :value="lang.code">
               {{ lang.name }}
             </option>
@@ -60,10 +67,34 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+// useRouter 제거 (사용하지 않음)
+// import { useRouter } from 'vue-router'
 
-// 지원되는 언어 목록 (BCP-47 형식)
+// 라우터 인스턴스 제거
+// const router = useRouter()
+
+// 페이지 이동 함수 제거
+// function navigateTo(path: string) {
+//   router.push(path)
+// }
+
+// 나머지 코드는 그대로 유지
+// useRouter 제거 (사용하지 않음)
+// import { useRouter } from 'vue-router'
+
+// 라우터 인스턴스 제거
+// const router = useRouter()
+
+// 페이지 이동 함수 제거
+// function navigateTo(path: string) {
+//   router.push(path)
+// }
+
+// 나머지 코드는 그대로 유지
 const languages = [
   { code: 'ko-KR', name: '한국어' },
+  // 나머지 언어 목록은 그대로 유지
+  // 나머지 언어 목록은 그대로 유지
   { code: 'en-US', name: '영어 (미국)' },
   { code: 'en-GB', name: '영어 (영국)' },
   { code: 'zh-CN', name: '중국어 (간체)' },
@@ -115,7 +146,7 @@ const translatedText = ref('')
 let socket: WebSocket | null = null
 let audioContext: AudioContext | null = null
 let audioStream: MediaStream | null = null
-let workletNode = null
+// const workletNode: AudioWorkletNode | null = null
 
 // 로그 메시지 추가 함수
 function logMessage(message: string) {
@@ -177,14 +208,21 @@ async function sendToOpenAI() {
     translatedText.value = '번역 중...'
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-    // 환경에 따라 프로토콜 결정 (로컬은 http, 배포는 https)
-    const isLocalhost = apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1')
+
+    // localStorage에서 script ID 가져오기
+    const scriptId = localStorage.getItem('scriptId')
+    if (!scriptId) {
+      logMessage('⚠️ Script ID가 없습니다. 번역을 진행할 수 없습니다.')
+      translatedText.value = '번역을 위한 Script ID가 없습니다.'
+      return
+    }
 
     // 서버 전송 이벤트(SSE)를 처리하기 위해 fetch 직접 사용
-    const response = await fetch(`${apiBaseUrl}/openai/streaming/`, {
+    const response = await fetch(`${apiBaseUrl}/openai/header-test/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-script-id': scriptId, // Script ID를 헤더에 추가
       },
       body: JSON.stringify({
         lang: translatedLanguage.value,
@@ -207,7 +245,8 @@ async function sendToOpenAI() {
       // 스트림 읽기 함수
       const processStream = async () => {
         try {
-          while (true) {
+          let isProcessing = true
+          while (isProcessing) {
             const { done, value } = await reader.read()
 
             if (done) {
@@ -263,7 +302,7 @@ function clearInterimText() {
 function initializeWebSocket() {
   // 환경 변수에서 API 기본 URL 가져오기
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-  socket = new WebSocket(`${apiBaseUrl.replace('https', 'wss')}/stt/websocket/`)
+  socket = new WebSocket(`${apiBaseUrl.replace('https', 'wss')}/stt/websocket`)
   socket.binaryType = 'arraybuffer'
 
   console.log('소켓 상태', socket.readyState)
@@ -345,7 +384,7 @@ async function startRecording() {
 
     const source = audioContext.createMediaStreamSource(audioStream)
 
-    workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
+    const workletNode = new AudioWorkletNode(audioContext, 'recorder-processor')
 
     source.connect(workletNode)
     workletNode.connect(audioContext.destination)
@@ -431,6 +470,55 @@ onBeforeUnmount(() => {
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
+/* 기존 스타일 유지 */
+
+/* 네비게이션 버튼 스타일 추가 */
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  margin-right: 20px;
+}
+
+.btn-nav {
+  background-color: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s,
+    color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-nav:hover {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3);
+}
+
+.btn-nav .material-icon {
+  margin-right: 4px;
+}
+
+/* 헤더 스타일 수정 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dadce0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 나머지 스타일은 그대로 유지 */
 .audio-worklet-stt {
   font-family: 'Roboto', 'Noto Sans KR', sans-serif;
   max-width: 800px;

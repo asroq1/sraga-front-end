@@ -28,3 +28,7 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Volar temporary files
+**/*.vue.js
+**/*.vue.ts
