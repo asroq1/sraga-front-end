@@ -43,7 +43,12 @@
     </div>
 
     <div v-if="showModal" class="modal-overlay" @click.self="cancelModal">
-      <div class="modal-container card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div
+        class="modal-container card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
         <div class="modal-header">
           <h3 id="modal-title" class="modal-title">새 미팅 이름 입력</h3>
           <button @click="cancelModal" class="modal-close-btn" aria-label="닫기">
@@ -52,8 +57,14 @@
         </div>
         <div class="modal-body">
           <label for="meetingNameInput" class="input-label">미팅 이름:</label>
-          <input id="meetingNameInput" type="text" v-model="newMeetingName" placeholder="미팅 이름을 입력하세요"
-            class="modal-input" @keyup.enter="saveMeetingName" />
+          <input
+            id="meetingNameInput"
+            type="text"
+            v-model="newMeetingName"
+            placeholder="미팅 이름을 입력하세요"
+            class="modal-input"
+            @keyup.enter="saveMeetingName"
+          />
           <p v-if="showNameRequiredWarning" class="warning-text">미팅 이름을 입력해주세요.</p>
         </div>
         <div class="modal-footer">
@@ -62,155 +73,154 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/services/api';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { api } from '@/services/api'
 
 // --- 상수 정의 ---
-const URI_SCRIPT_ALL: string = '/script/all/';
-const MEETING_NAME_KEY = 'new_meeting_name'; // 로컬 스토리지 키
+const URI_SCRIPT_ALL: string = '/script/all/'
+const MEETING_NAME_KEY = 'new_meeting_name' // 로컬 스토리지 키
 
 // --- 인터페이스 정의 ---
 interface Script {
-  id: number | string;
-  name?: string;
+  id: number | string
+  name?: string
 }
 
 // --- 컴포넌트 상태 변수 ---
-const scripts = ref<Script[]>([]);
-const loading = ref<boolean>(false);
-const error = ref<string | null>(null);
-const userName = ref<string | null>(null);
-const userId = ref<number | null>(null);
-const router = useRouter();
+const scripts = ref<Script[]>([])
+const loading = ref<boolean>(false)
+const error = ref<string | null>(null)
+const userName = ref<string | null>(null)
+const userId = ref<number | null>(null)
+const router = useRouter()
 
 // 모달 관련 상태
-const showModal = ref<boolean>(false);
-const newMeetingName = ref<string>('');
-const showNameRequiredWarning = ref<boolean>(false); // 이름 필수 경고
+const showModal = ref<boolean>(false)
+const newMeetingName = ref<string>('')
+const showNameRequiredWarning = ref<boolean>(false) // 이름 필수 경고
 
 // --- 함수 정의 ---
 
 // 스크립트 상세 보기 함수 (라우트 이름 'script'로 변경)
 const viewScriptDetail = (scriptId: number | string) => {
   // 'script' 라우트로 id 파라미터와 함께 이동
-  router.push({ name: 'script', params: { id: scriptId } });
-};
+  console.log('scriptId', scriptId)
+  router.push({ name: 'script', params: { id: scriptId } })
+}
 
 // 새 미팅 생성 버튼 클릭 시 (모달 열기)
 const createNewMeeting = () => {
   // 기존 로컬 스토리지 값 삭제
-  localStorage.removeItem(MEETING_NAME_KEY);
+  localStorage.removeItem(MEETING_NAME_KEY)
   // 입력 필드 초기화
-  newMeetingName.value = '';
-  showNameRequiredWarning.value = false; // 경고 초기화
+  newMeetingName.value = ''
+  showNameRequiredWarning.value = false // 경고 초기화
   // 모달 표시
-  showModal.value = true;
-};
+  showModal.value = true
+}
 
 // 모달: 취소 버튼 클릭 시
 const cancelModal = () => {
-  showModal.value = false;
-  showNameRequiredWarning.value = false; // 경고 초기화
-};
+  showModal.value = false
+  showNameRequiredWarning.value = false // 경고 초기화
+}
 
+// a
 // 모달: 저장 버튼 클릭 시 (저장 후 'script' 라우트로 이동)
 const saveMeetingName = () => {
   // 입력값 검증
   if (!newMeetingName.value.trim()) {
-    showNameRequiredWarning.value = true; // 경고 표시
-    console.warn("미팅 이름이 비어있습니다.");
-    return; // 저장 중단
+    showNameRequiredWarning.value = true // 경고 표시
+    return // 저장 중단
   }
 
-  const meetingNameToSave = newMeetingName.value.trim();
+  const meetingNameToSave = newMeetingName.value.trim()
   // 로컬 스토리지에 저장
-  localStorage.setItem(MEETING_NAME_KEY, meetingNameToSave);
-  console.log(`미팅 이름 "${meetingNameToSave}" 저장됨`);
+  localStorage.setItem(MEETING_NAME_KEY, meetingNameToSave)
+  console.log(`미팅 이름 "${meetingNameToSave}" 저장됨`)
 
   // 모달 닫기
-  showModal.value = false;
-  showNameRequiredWarning.value = false; // 경고 초기화
+  showModal.value = false
+  showNameRequiredWarning.value = false // 경고 초기화
 
+  console.log('스크립트 생성 후 라우트 이동')
   // 저장 후 'script' 라우트로 이동
   // 필요하다면 저장된 이름이나 다른 정보를 query 또는 params로 전달할 수 있음
-  router.push({ name: 'script' });
-};
-
+  router.push({ name: 'script' })
+}
 
 // 스크립트 목록 로딩 및 정렬 함수
 const loadScripts = async () => {
-  loading.value = true;
-  error.value = null;
+  loading.value = true
+  error.value = null
   if (!userId.value) {
-    error.value = "사용자 ID를 가져올 수 없습니다.";
-    loading.value = false;
-    scripts.value = [];
-    return;
+    error.value = '사용자 ID를 가져올 수 없습니다.'
+    loading.value = false
+    scripts.value = []
+    return
   }
   try {
-    const response = await api.get(URI_SCRIPT_ALL + userId.value);
-    let fetchedScripts: Script[] = [];
+    const response = await api.get(URI_SCRIPT_ALL + userId.value)
+    let fetchedScripts: Script[] = []
 
     // 데이터 할당
     if (response && Array.isArray(response.results)) {
-      fetchedScripts = response.results;
+      fetchedScripts = response.results
     } else if (Array.isArray(response)) {
-      fetchedScripts = response;
+      fetchedScripts = response
     } else {
-      console.warn("예상치 못한 API 응답 구조:", response);
-      fetchedScripts = [];
+      console.warn('예상치 못한 API 응답 구조:', response)
+      fetchedScripts = []
     }
 
     // 이름 오름차순으로 정렬 (localeCompare 사용)
     fetchedScripts.sort((a, b) => {
-      const nameA = a.name || ''; // name이 없을 경우 빈 문자열로 처리
-      const nameB = b.name || '';
-      return nameA.localeCompare(nameB, 'ko'); // A와 B를 비교하여 오름차순 정렬
-    });
+      const nameA = a.name || '' // name이 없을 경우 빈 문자열로 처리
+      const nameB = b.name || ''
+      return nameA.localeCompare(nameB, 'ko') // A와 B를 비교하여 오름차순 정렬
+    })
 
-    scripts.value = fetchedScripts; // 정렬된 배열을 최종 할당
-
+    scripts.value = fetchedScripts // 정렬된 배열을 최종 할당
   } catch (err) {
-    console.error('미팅 목록 로딩 실패:', err);
+    console.error('미팅 목록 로딩 실패:', err)
     if (err instanceof Error) {
-      error.value = err.message || '서버와 통신 중 문제가 발생했습니다.';
+      error.value = err.message || '서버와 통신 중 문제가 발생했습니다.'
     } else {
-      error.value = '알 수 없는 오류가 발생했습니다.';
+      error.value = '알 수 없는 오류가 발생했습니다.'
     }
-    scripts.value = [];
+    scripts.value = []
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 컴포넌트 마운트 시 실행될 로직
 onMounted(() => {
-  userName.value = localStorage.getItem('sraga_name');
-  const storedUserId = localStorage.getItem('userId');
+  userName.value = localStorage.getItem('sraga_name')
+  const storedUserId = localStorage.getItem('userId')
   if (storedUserId) {
-    userId.value = parseInt(storedUserId, 10); // 10진수로 파싱
+    userId.value = parseInt(storedUserId, 10) // 10진수로 파싱
     if (isNaN(userId.value)) {
-      console.error("userId 파싱 오류:", storedUserId);
-      userId.value = null; // 파싱 실패 시 null 처리
+      console.error('userId 파싱 오류:', storedUserId)
+      userId.value = null // 파싱 실패 시 null 처리
     }
   } else {
-    console.error("로컬 스토리지에 userId가 없습니다.");
+    console.error('로컬 스토리지에 userId가 없습니다.')
   }
 
   // userId가 유효한 경우에만 스크립트 로드
   if (userId.value !== null) {
-    loadScripts();
+    loadScripts()
   } else {
-    error.value = "사용자 정보를 불러올 수 없어 미팅 목록을 로드할 수 없습니다.";
-    scripts.value = []; // 스크립트 목록 비우기
+    error.value = '사용자 정보를 불러올 수 없어 미팅 목록을 로드할 수 없습니다.'
+    scripts.value = [] // 스크립트 목록 비우기
   }
-});
+})
 </script>
 
 <style scoped>
@@ -300,7 +310,6 @@ onMounted(() => {
   font-size: 1.1em;
 }
 
-
 /* 로딩 컨테이너 */
 .loading-container {
   text-align: center;
@@ -344,7 +353,9 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 1rem;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
   border: 1px solid var(--color-border);
   display: flex;
   flex-direction: row;
@@ -493,7 +504,6 @@ onMounted(() => {
   color: var(--color-text);
 }
 
-
 .modal-body {
   margin-bottom: 1.5rem;
 }
@@ -526,7 +536,6 @@ onMounted(() => {
   font-size: 0.8rem;
   margin-top: 0.3rem;
 }
-
 
 .modal-footer {
   display: flex;
