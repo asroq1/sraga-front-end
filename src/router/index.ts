@@ -1,17 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import MainView from '../components/AudioWorkletSTT.vue'
 import ReceiptView from '../views/ReceiptView.vue'
 import MeetingSummaryView from '../views/MeetingSummaryView.vue'
 import LoginView from '../views/LoginView.vue'
+import ScriptListView from '@/views/ScriptListView.vue'
 import { loadUserFromStorage } from '../services/userService'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView,
+      path: '/script/:id?',
+      name: 'script',
+      component: MainView,
       meta: { requiresAuth: true },
     },
     {
@@ -29,6 +30,12 @@ const router = createRouter({
       path: '/meeting-summary',
       name: 'meeting-summary',
       component: MeetingSummaryView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/script-list',
+      name: 'script-list',
+      component: () => ScriptListView,
       meta: { requiresAuth: true },
     },
   ],
