@@ -3,9 +3,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-// const scriptId = route.params.scriptId as string
-const scriptId = 'F-k_LQcuSKKNOoYMkdiWcg'
-
+// const scriptId = 'F-k_LQcuSKKNOoYMkdiWcg'
+const scriptId = localStorage.getItem('scriptId')
+console.log(scriptId)
 const scriptText = ref('')
 const isExpanded = ref(false)
 
@@ -202,86 +202,86 @@ onMounted(() => {
           <p class="card-text">{{ summaryData.summary }}</p>
         </div>
       </div>
-    <!-- 논의사항 -->
-    <div v-if="summaryData.discussions.length" class="card discussions ai-glow" style="--delay: 0.2s">
-      <div class="card-content">
-        <div class="card-title-row">
-          <span class="material-symbols-outlined">chat</span>
-          <h3 class="card-title">논의사항</h3>
-        </div>
-        <ul class="card-list">
-          <li 
-            v-for="(item, i) in summaryData.discussions" 
-            :key="'n' + i" 
-            class="list-item"
-          >
-            <span class="list-number">{{ i + 1 }}</span>
-            <span class="list-item-text">{{ item }}</span>
-          </li>
-        </ul>
-      </div>
-    </div>
 
-    <!-- 결정사항 -->
-    <div v-if="summaryData.decisions.length" class="card decisions ai-glow" style="--delay: 0.2s">
-      <div class="card-content">
-        <div class="card-title-row">
-          <span class="material-symbols-outlined">subject</span>
-          <h3 class="card-title">결정사항</h3>
+      <!-- 논의사항 -->
+      <div v-if="summaryData.discussions.length" class="card ai-glow" style="--delay: 0.2s">
+        <div class="card-content">
+          <div class="card-title-row">
+            <span class="material-symbols-outlined">chat</span>
+            <h3 class="card-title">논의사항</h3>
+          </div>
+          <ul class="card-list">
+            <li 
+              v-for="(item, i) in summaryData.discussions" 
+              :key="'n' + i" 
+              class="list-item"
+            >
+              <span class="list-icon chat">chat_bubble</span>
+              <span class="list-item-text">{{ item }}</span>
+            </li>
+          </ul>
         </div>
-        <ul class="card-list">
-          <li 
-            v-for="(item, i) in summaryData.decisions" 
-            :key="'d' + i" 
-            class="list-item"
-          >
-            <span class="list-number">{{ i + 1 }}</span>
-            <span class="list-item-text">{{ item }}</span>
-          </li>
-        </ul>
       </div>
-    </div>
 
-    <!-- 할 일 -->
-    <div v-if="summaryData.actions.length" class="card actions ai-glow" style="--delay: 0.2s">
-      <div class="card-content">
-        <div class="card-title-row">
-          <span class="material-symbols-outlined">task_alt</span>
-          <h3 class="card-title">할 일</h3>
+      <!-- 결정사항 -->
+      <div v-if="summaryData.decisions.length" class="card ai-glow" style="--delay: 0.2s">
+        <div class="card-content">
+          <div class="card-title-row">
+            <span class="material-symbols-outlined">subject</span>
+            <h3 class="card-title">결정사항</h3>
+          </div>
+          <ul class="card-list">
+            <li 
+              v-for="(item, i) in summaryData.decisions" 
+              :key="'d' + i" 
+              class="list-item"
+            >
+              <span class="list-icon number">{{ i + 1 }}</span>
+              <span class="list-item-text">{{ item }}</span>
+            </li>
+          </ul>
         </div>
-        <ul class="card-list">
-          <li 
-            v-for="(item, i) in summaryData.actions" 
-            :key="'a' + i" 
-            class="list-item"
-          >
-            <span class="list-number">{{ i + 1 }}</span>
-            <span class="list-item-text">{{ item }}</span>
-          </li>
-        </ul>
       </div>
-    </div>
 
-    <!-- 미해결 이슈 -->
-    <div v-if="summaryData.unresolved.length" class="card unresolved ai-glow" style="--delay: 0.2s">
-      <div class="card-content">
-        <div class="card-title-row">
-          <span class="material-symbols-outlined">report</span>
-          <h3 class="card-title">미해결 이슈</h3>
+      <!-- Action Items -->
+      <div v-if="summaryData.actions.length" class="card ai-glow" style="--delay: 0.2s">
+        <div class="card-content">
+          <div class="card-title-row">
+            <span class="material-symbols-outlined">task_alt</span>
+            <h3 class="card-title">할 일</h3>
+          </div>
+          <ul class="card-list">
+            <li 
+              v-for="(item, i) in summaryData.actions" 
+              :key="'a' + i" 
+              class="list-item"
+            >
+              <span class="list-icon check">check_box</span>
+              <span class="list-item-text">{{ item }}</span>
+            </li>
+          </ul>
         </div>
-        <ul class="card-list">
-          <li 
-            v-for="(item, i) in summaryData.unresolved" 
-            :key="'u' + i" 
-            class="list-item"
-          >
-            <span class="list-number">{{ i + 1 }}</span>
-            <span class="list-item-text">{{ item }}</span>
-          </li>
-        </ul>
       </div>
-    </div>
 
+      <!-- 미해결 이슈 -->
+      <div v-if="summaryData.unresolved.length" class="card ai-glow" style="--delay: 0.2s">
+        <div class="card-content">
+          <div class="card-title-row">
+            <span class="material-symbols-outlined">report</span>
+            <h3 class="card-title">미해결 이슈</h3>
+          </div>
+          <ul class="card-list">
+            <li 
+              v-for="(item, i) in summaryData.unresolved" 
+              :key="'u' + i" 
+              class="list-item"
+            >
+              <span class="list-icon issue">report_problem</span>
+              <span class="list-item-text">{{ item }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
 
       <!-- 키워드 -->
       <div v-if="summaryData.keywords.length" class="card ai-glow" style="--delay: 0.2s">
