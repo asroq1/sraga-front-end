@@ -1,7 +1,7 @@
 <template>
   <div class="audio-worklet-stt">
     <div class="header">
-      <h2>🎤 Test</h2>
+      <h2>{{ chatTitle }}</h2>
       <div class="nav-buttons"></div>
       <div class="controls">
         <div class="language-selector">
@@ -31,16 +31,20 @@
             </option>
           </select>
         </div>
+        <!-- 회의 나가기 버튼 -->
+        <button class="btn-secondary" @click="exitMeeting">
+          <span class="material-icon">exit_to_app</span> 회의 나가기
+        </button>
         <button class="btn-primary" @click="startRecording" :disabled="isRecording">
           <span class="material-icon">mic</span> 시작
         </button>
-        <button class="btn-secondary" @click="stopRecording" :disabled="!isRecording">
+        <button class="btn-exit" @click="stopRecording" :disabled="!isRecording">
           <span class="material-icon">stop</span> 중지
         </button>
       </div>
     </div>
 
-    <div class="chat-container">
+    <div class="chat-container flex flex-row">
       <div class="messages" ref="messagesContainer">
         <!-- 메시지 기록 표시 -->
         <div
@@ -60,6 +64,7 @@
           <div class="message-content">{{ interimText }}</div>
         </div>
       </div>
+      <MeetingSummary :messages="messageHistory" class="meeting-summary" />
     </div>
 
     <div class="log-section">
@@ -74,7 +79,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-
+import MeetingSummary from './MeetingSummary.vue'
 const languages = [
   { code: 'ko-KR', name: '한국어' },
   // 나머지 언어 목록은 그대로 유지
@@ -128,6 +133,7 @@ function switchLanguages() {
 }
 
 // 기존 상태 변수들
+const chatTitle = ref(localStorage.getItem('new_meeting_name') || '새로운 스크립트')
 const isRecording = ref(false)
 const socketReady = ref(false)
 const finalText = ref('')
@@ -144,6 +150,19 @@ let socket: WebSocket | null = null
 let audioContext: AudioContext | null = null
 let audioStream: MediaStream | null = null
 // const workletNode: AudioWorkletNode | null = null
+
+// 이전 회의 내용 존재 여부를 확인하는 ref 추가
+const hasExistingContent = ref(false)
+
+// 회의 나가기 함수 추가
+function exitMeeting() {
+  // 필요한 정리 작업 수행
+  stopRecording()
+  localStorage.removeItem('scriptId')
+
+  // script-list 페이지로 이동
+  window.location.href = '/script-list'
+}
 
 // 로그 메시지 추가 함수
 function logMessage(message: string) {
@@ -198,22 +217,25 @@ function scrollToBottom() {
   }, 0)
 }
 
-// 스크립트 생성 API 함수
-async function createScript() {
+// 스크립트 상세 정보 가져오기 API 함수
+
+async function getScriptDetails() {
   try {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const scriptId = localStorage.getItem('scriptId')
 
-    logMessage(`🔄 스크립트 생성 API 호출 중...`)
+    if (!scriptId) {
+      logMessage('⚠️ 스크립트 ID가 없습니다. 스크립트 정보를 가져올 수 없습니다.')
+      return null
+    }
 
-    const response = await fetch(`${apiBaseUrl}/script/create`, {
-      method: 'POST',
+    logMessage(`🔄 스크립트 상세 정보 가져오는 중... (ID: ${scriptId})`)
+
+    const response = await fetch(`${apiBaseUrl}/script/${scriptId}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        user_id: localStorage.getItem('userId'),
-        name: localStorage.getItem('sraga_name'),
-      }),
     })
 
     if (!response.ok) {
@@ -221,16 +243,34 @@ async function createScript() {
     }
 
     const data = await response.json()
+    logMessage(`✅ 스크립트 정보 로드 완료: ${data.name || '이름 없음'}`)
+    console.log('Received data:', data)
 
-    // 응답에서 받은 id를 localStorage에 저장
-    localStorage.setItem('scriptId', data.id)
-    logMessage(`✅ 스크립트 생성 완료: ID=${data.id}`)
+    // Clear existing message history
+    messageHistory.value = []
 
+    // 스크립트 내용이 있는 경우 처리
+    if (data) {
+      // 문자열을 배열로 변환하여 처리
+      const messages = data.split('\n').filter((text: string) => text.trim() !== '')
+      messages.forEach((text: string) => {
+        messageHistory.value.push({
+          type: 'user',
+          text: text.trim(),
+          translatedText: '', // 번역된 텍스트가 없는 경우 빈 문자열
+        })
+      })
+    }
+
+    // Update hasExistingContent based on messageHistory
+    hasExistingContent.value = messageHistory.value.length === 0
+
+    scrollToBottom()
     return data
   } catch (error: unknown) {
-    logMessage(`❌ 스크립트 생성 오류: ${(error as Error).message}`)
-    console.error('스크립트 생성 오류:', error)
-    throw error
+    logMessage(`❌ 스크립트 정보 로드 오류: ${(error as Error).message}`)
+    console.error('스크립트 정보 로드 오류:', error)
+    return null
   }
 }
 
@@ -239,7 +279,7 @@ async function sendToOpenAI() {
   try {
     logMessage(`🔄 OpenAI API로 데이터 전송 중...`)
     // 스크립트 생성 API 호출
-    await createScript()
+    // await createScript()
 
     // 번역 중임을 표시하는 임시 메시지 추가
     const translationIndex = messageHistory.value.length - 1 // 마지막 사용자 메시지 인덱스
@@ -536,14 +576,26 @@ function stopRecording() {
 
 // 컴포넌트 마운트 시 WebSocket 초기화
 onMounted(() => {
+  // URL에서 스크립트 ID 추출
+  const currentPath = window.location.pathname
+  const pathMatch = currentPath.match(/\/script\/([^\/]+)/)
+
+  if (pathMatch && pathMatch[1]) {
+    const scriptIdFromUrl = pathMatch[1]
+    // URL에서 추출한 스크립트 ID를 localStorage에 저장
+    localStorage.setItem('scriptId', scriptIdFromUrl)
+    logMessage(`📄 URL에서 스크립트 ID 추출: ${scriptIdFromUrl}`)
+  }
+
   // 컴포넌트 마운트 시 소켓 연결 시도
   initializeWebSocket()
+  getScriptDetails()
 })
 
 // 컴포넌트 언마운트 시 리소스 정리
 onBeforeUnmount(() => {
   stopRecording()
-
+  localStorage.removeItem('scriptId')
   if (socket) {
     socket.close()
     socket = null
@@ -607,7 +659,7 @@ onBeforeUnmount(() => {
 /* 나머지 스타일은 그대로 유지 */
 .audio-worklet-stt {
   font-family: 'Roboto', 'Noto Sans KR', sans-serif;
-  max-width: 800px;
+  max-width: 1200px; /* Increased to accommodate both components */
   margin: 0 auto;
   padding: 20px;
   color: #202124;
@@ -720,18 +772,24 @@ button {
   margin-bottom: 20px;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 .messages {
-  flex: 1;
+  flex: 2; /* Takes up 2/3 of the space */
   overflow-y: auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  border-right: 1px solid #dadce0;
 }
 
+.meeting-summary {
+  flex: 1; /* Takes up 1/3 of the space */
+  overflow-y: auto;
+  border-left: 1px solid #dadce0;
+}
 .message {
   display: flex;
   max-width: 80%;
@@ -852,5 +910,24 @@ button {
 .controls {
   display: flex;
   align-items: center;
+}
+
+.btn-exit {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-exit:hover {
+  background-color: #c82333;
 }
 </style>

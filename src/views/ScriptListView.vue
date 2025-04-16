@@ -43,7 +43,12 @@
     </div>
 
     <div v-if="showModal" class="modal-overlay" @click.self="cancelModal">
-      <div class="modal-container card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div
+        class="modal-container card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
         <div class="modal-header">
           <h3 id="modal-title" class="modal-title">새 미팅 이름 입력</h3>
           <button @click="cancelModal" class="modal-close-btn" aria-label="닫기">
@@ -52,8 +57,14 @@
         </div>
         <div class="modal-body">
           <label for="meetingNameInput" class="input-label">미팅 이름:</label>
-          <input id="meetingNameInput" type="text" v-model="newMeetingName" placeholder="미팅 이름을 입력하세요"
-            class="modal-input" @keyup.enter="saveMeetingName" />
+          <input
+            id="meetingNameInput"
+            type="text"
+            v-model="newMeetingName"
+            placeholder="미팅 이름을 입력하세요"
+            class="modal-input"
+            @keyup.enter="saveMeetingName"
+          />
           <p v-if="showNameRequiredWarning" class="warning-text">미팅 이름을 입력해주세요.</p>
         </div>
         <div class="modal-footer">
@@ -77,11 +88,11 @@ const URI_SCRIPT_CREATE: string = '/script/create'
 // --- 인터페이스 정의 ---
 interface Script {
   id: number | string
-  name?: string
+  name: string
 }
 
 interface CreateScriptBody {
-  user_id: number
+  user_id?: number
   name: string
 }
 
@@ -89,8 +100,6 @@ interface CreateScriptData {
   id: string
   name: string
 }
-
-
 
 // --- 컴포넌트 상태 변수 ---
 const scripts = ref<Script[]>([])
@@ -143,16 +152,15 @@ const saveMeetingName = async () => {
   showModal.value = false
   showNameRequiredWarning.value = false // 경고 초기화
 
-  const body: CreateScript = {
-    user_id: userId.value,
-    name: meetingNameToSave
+  const body: CreateScriptBody = {
+    user_id: userId.value ?? undefined,
+    name: meetingNameToSave,
   }
 
   // script id 생성
   try {
     const response: CreateScriptData = await api.post(URI_SCRIPT_CREATE, body)
     script_Id = response.id
-
   } catch (err) {
     if (err instanceof Error) {
       error.value = '서버와 통신 중 문제가 발생했습니다.'
