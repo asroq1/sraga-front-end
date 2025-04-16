@@ -22,7 +22,7 @@ function navigateTo(path: string) {
 <template>
   <div class="app-container">
     <main class="main-content">
-      <AudioWorkletSTT v-if="route.path === '/' && route.name !== 'login'" />
+      <!-- <AudioWorkletSTT v-if="route.path === '/' && route.name !== 'login'" /> -->
       <RouterView />
     </main>
 
