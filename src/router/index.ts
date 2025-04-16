@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import MainView from '../components/AudioWorkletSTT.vue'
 import ReceiptView from '../views/ReceiptView.vue'
 import MeetingSummaryView from '../views/MeetingSummaryView.vue'
 import LoginView from '../views/LoginView.vue'
@@ -8,10 +8,16 @@ import { loadUserFromStorage } from '../services/userService'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // {
+    //   path: '/',
+    //   name: '',
+    //   component: MainView,
+    //   meta: { requiresAuth: true },
+    // },
     {
-      path: '/',
-      name: 'home',
-      component: HomeView,
+      path: '/main',
+      name: 'main',
+      component: MainView,
       meta: { requiresAuth: true },
     },
     {
