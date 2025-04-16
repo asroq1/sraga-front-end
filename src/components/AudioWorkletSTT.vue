@@ -199,12 +199,48 @@ function scrollToBottom() {
   }, 0)
 }
 
+// 스크립트 생성 API 함수
+async function createScript() {
+  try {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+    logMessage(`🔄 스크립트 생성 API 호출 중...`)
+
+    const response = await fetch(`${apiBaseUrl}/script/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: localStorage.getItem('userId'),
+        name: localStorage.getItem('sraga_name'),
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // 응답에서 받은 id를 localStorage에 저장
+    localStorage.setItem('scriptId', data.id)
+    logMessage(`✅ 스크립트 생성 완료: ID=${data.id}`)
+
+    return data
+  } catch (error: unknown) {
+    logMessage(`❌ 스크립트 생성 오류: ${(error as Error).message}`)
+    console.error('스크립트 생성 오류:', error)
+    throw error
+  }
+}
+
 // OpenAI API로 데이터 전송 함수
-// sendToOpenAI 함수 내부 수정
 async function sendToOpenAI() {
   try {
     logMessage(`🔄 OpenAI API로 데이터 전송 중...`)
-
+    // 스크립트 생성 API 호출
+    await createScript()
     // 번역 중임을 표시
     translatedText.value = '번역 중...'
 
@@ -219,7 +255,7 @@ async function sendToOpenAI() {
     }
 
     // 서버 전송 이벤트(SSE)를 처리하기 위해 fetch 직접 사용
-    const response = await fetch(`${apiBaseUrl}/openai/header-test/`, {
+    const response = await fetch(`${apiBaseUrl}/openai/translate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -234,7 +270,6 @@ async function sendToOpenAI() {
     if (!response.ok) {
       throw new Error(`API 오류: ${response.status}`)
     }
-
     // 응답을 텍스트 스트림으로 처리
     const reader = response.body?.getReader()
     const decoder = new TextDecoder('utf-8')
