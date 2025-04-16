@@ -1,35 +1,84 @@
-@import './base.css';
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+/* Global styles matching Skyscanner design */
+:root {
+  --color-primary: #0770e3;
+  --color-primary-dark: #084eb2;
+  --color-background: #f1f2f8;
+  --color-white: #ffffff;
+  --color-text: #111236;
+  --color-text-secondary: #68697f;
+  --color-border: #dddde5;
+  --color-success: #00a698;
+  --color-error: #d1435b;
+  --color-warning: #ffb700;
+  --shadow-sm: 0 1px 4px rgba(17, 18, 54, 0.15);
+  --shadow-md: 0 4px 8px rgba(17, 18, 54, 0.2);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.5;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* Button styles */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+.btn-primary:disabled {
+  background-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+/* Card styles */
+.card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+/* Status messages */
+.status-message {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.status-message.success {
+  background-color: #e6f6f5;
+  color: var(--color-success);
+}
+
+.status-message.error {
+  background-color: #ffebed;
+  color: var(--color-error);
+}
+
+/* Material Icons override */
+.material-icon {
+  font-family: 'Material Icons';
+  font-size: 20px;
+  vertical-align: middle;
 }

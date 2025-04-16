@@ -1,85 +1,157 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import AudioWorkletSTT from './components/AudioWorkletSTT.vue'
+
+const route = useRoute()
+const router = useRouter()
+
+const activeTab = computed(() => {
+  if (route.path === '/') return 'home'
+  if (route.path === '/receipt') return 'receipt'
+  if (route.path === '/meeting-summary') return 'meeting'
+  return 'home'
+})
+
+function navigateTo(path: string) {
+  router.push(path)
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <div class="app-container">
+    <main class="main-content">
+      <AudioWorkletSTT v-if="route.path === '/' && route.name !== 'login'" />
+      <RouterView />
+    </main>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+    <!-- Only show navigation when user is authenticated -->
+    <nav v-if="route.name !== 'login'" class="bottom-nav">
+      <button class="nav-item" :class="{ active: activeTab === 'home' }" @click="navigateTo('/')">
+        <span class="material-icon">home</span>
+        <span class="nav-label">홈</span>
+      </button>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
+      <button
+        class="nav-item"
+        :class="{ active: activeTab === 'receipt' }"
+        @click="navigateTo('/receipt')"
+      >
+        <span class="material-icon">receipt</span>
+        <span class="nav-label">영수증</span>
+      </button>
 
-  <RouterView />
+      <button
+        class="nav-item"
+        :class="{ active: activeTab === 'meeting' }"
+        @click="navigateTo('/meeting-summary')"
+      >
+        <span class="material-icon">summarize</span>
+        <span class="nav-label">회의 요약</span>
+      </button>
+    </nav>
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+<style>
+/* 전역 스타일 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
+    'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f7fa;
+  color: #333;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+/* 앱 컨테이너 스타일 */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-nav {
-  width: 100%;
+/* 메인 콘텐츠 영역 */
+.main-content {
+  flex: 1;
+  padding: 0 0 70px 0; /* 하단 네비게이션 바 높이만큼 패딩 추가 */
+  overflow-y: auto;
+}
+
+/* 하단 네비게이션 바 */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 60px;
+  background-color: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+/* 네비게이션 아이템 */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  color: #888;
   font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 8px 0;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.nav-item.active {
+  color: #4a90e2;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
+.nav-item:hover {
+  color: #4a90e2;
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+/* 아이콘 스타일 */
+.material-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
 }
 
-nav a:first-of-type {
-  border: 0;
+/* 네비게이션 라벨 */
+.nav-label {
+  font-size: 12px;
+  font-weight: 500;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 0 0 60px 0;
   }
 
-  .logo {
-    margin: 0 2rem 0 0;
+  .bottom-nav {
+    height: 56px;
   }
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
+  .material-icon {
+    font-size: 22px;
   }
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
+  .nav-label {
+    font-size: 11px;
   }
 }
 </style>
