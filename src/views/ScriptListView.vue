@@ -26,6 +26,7 @@
       <div v-for="script in scripts" :key="script.id" class="card script-card">
         <div class="card-content">
           <h2 class="script-name">{{ script.name || '제목 없음' }}</h2>
+          <p class="script-date">{{ formatDate(script.created_date) }}</p>
         </div>
         <div class="card-actions">
           <button @click="viewScriptDetail(script.id)" class="btn-primary btn-sm">
@@ -43,28 +44,16 @@
     </div>
 
     <div v-if="showModal" class="modal-overlay" @click.self="cancelModal">
-      <div
-        class="modal-container card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-      >
+      <div class="modal-container card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-          <h3 id="modal-title" class="modal-title">새 미팅 이름 입력</h3>
+          <h3 id="modal-title" class="modal-title">미팅 이름 입력</h3>
           <button @click="cancelModal" class="modal-close-btn" aria-label="닫기">
             <span class="material-icon">close</span>
           </button>
         </div>
         <div class="modal-body">
-          <label for="meetingNameInput" class="input-label">미팅 이름:</label>
-          <input
-            id="meetingNameInput"
-            type="text"
-            v-model="newMeetingName"
-            placeholder="미팅 이름을 입력하세요"
-            class="modal-input"
-            @keyup.enter="saveMeetingName"
-          />
+          <input id="meetingNameInput" type="text" v-model="newMeetingName" placeholder="미팅 이름을 입력하세요"
+            class="modal-input" @keyup.enter="saveMeetingName" />
           <p v-if="showNameRequiredWarning" class="warning-text">미팅 이름을 입력해주세요.</p>
         </div>
         <div class="modal-footer">
@@ -87,18 +76,20 @@ const URI_SCRIPT_CREATE: string = '/script/create'
 
 // --- 인터페이스 정의 ---
 interface Script {
-  id: number | string
+  id: string
   name: string
+  created_date: Date
 }
 
 interface CreateScriptBody {
-  user_id?: number
+  user_id: number
   name: string
 }
 
 interface CreateScriptData {
   id: string
   name: string
+  created_date: string
 }
 
 // --- 컴포넌트 상태 변수 ---
@@ -106,7 +97,7 @@ const scripts = ref<Script[]>([])
 const loading = ref<boolean>(false)
 const error = ref<string | null>(null)
 const userName = ref<string | null>(null)
-const userId = ref<number | null>(null)
+const userId = ref<number>(-1)
 const router = useRouter()
 
 // 모달 관련 상태
@@ -116,10 +107,8 @@ const showNameRequiredWarning = ref<boolean>(false) // 이름 필수 경고
 
 // --- 함수 정의 ---
 
-// 스크립트 상세 보기 함수 (라우트 이름 'script'로 변경)
-const viewScriptDetail = (scriptId: number | string) => {
-  // 'script' 라우트로 id 파라미터와 함께 이동
-  console.log('scriptId', scriptId)
+// 스크립트 상세 보기 함수
+const viewScriptDetail = (scriptId: string) => {
   router.push({ name: 'script', params: { id: scriptId } })
 }
 
@@ -153,7 +142,7 @@ const saveMeetingName = async () => {
   showNameRequiredWarning.value = false // 경고 초기화
 
   const body: CreateScriptBody = {
-    user_id: userId.value ?? undefined,
+    user_id: userId.value,
     name: meetingNameToSave,
   }
 
@@ -168,7 +157,7 @@ const saveMeetingName = async () => {
       error.value = '알 수 없는 오류가 발생했습니다.'
     }
   }
-  // 저장 후 'script' 라우트로 이동
+  // 생성 후 'script' 라우트로 이동
   router.push({ name: 'script', params: { id: script_Id } })
 }
 
@@ -183,30 +172,33 @@ const loadScripts = async () => {
     return
   }
   try {
-    const response = await api.get(URI_SCRIPT_ALL + userId.value)
+    const response: CreateScriptData[] = await api.get(URI_SCRIPT_ALL + userId.value)
     let fetchedScripts: Script[] = []
 
     // 데이터 할당
-    if (response && Array.isArray(response.results)) {
-      fetchedScripts = response.results
-    } else if (Array.isArray(response)) {
-      fetchedScripts = response
+    if (Array.isArray(response)) {
+      fetchedScripts = response.map((item) => ({
+        id: item.id,
+        name: item.name,
+        created_date: new Date(item.created_date),
+      }))
     } else {
       // console.warn('예상치 못한 API 응답 구조:', response)
       fetchedScripts = []
     }
 
-    // 이름 오름차순으로 정렬 (localeCompare 사용)
+    // created_date 내림차순으로 정렬 (최신 날짜가 위로)
     fetchedScripts.sort((a, b) => {
-      const nameA = a.name || '' // name이 없을 경우 빈 문자열로 처리
-      const nameB = b.name || ''
-      return nameA.localeCompare(nameB, 'ko') // A와 B를 비교하여 오름차순 정렬
+      // Date 객체는 getTime()을 사용하여 숫자 타임스탬프로 변환 후 비교합니다.
+      // b의 시간에서 a의 시간을 빼면 내림차순 정렬이 됩니다.
+      return b.created_date.getTime() - a.created_date.getTime();
     })
+
 
     scripts.value = fetchedScripts // 정렬된 배열을 최종 할당
   } catch (err) {
-    console.error('미팅 목록 로딩 실패:')
-    console.log(err)
+    // console.error('미팅 목록 로딩 실패:')
+    // console.log(err)
     if (err instanceof Error) {
       if (err.message === 'API 오류: 404') error.value = '미팅 목록이 없습니다.'
       else error.value = '서버와 통신 중 문제가 발생했습니다.'
@@ -219,6 +211,34 @@ const loadScripts = async () => {
   }
 }
 
+// 날짜 포맷팅 함수 수정
+const formatDate = (date: Date): string => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return '날짜 정보 없음';
+  }
+
+  const today = new Date();
+  const isToday =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+
+  if (isToday) {
+    // 오늘 날짜인 경우: HH:MM 형식
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  } else {
+    // 오늘이 아닌 경우: YYYY-MM-DD 형식
+    // 기존 로직 사용 (한국 로케일 기준)
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\. /g, '-').replace('.', '');
+  }
+}
+
 // 컴포넌트 마운트 시 실행될 로직
 onMounted(() => {
   userName.value = localStorage.getItem('sraga_name')
@@ -226,8 +246,10 @@ onMounted(() => {
   if (storedUserId) {
     userId.value = parseInt(storedUserId, 10) // 10진수로 파싱
     if (isNaN(userId.value)) {
-      console.error('userId 파싱 오류:', storedUserId)
-      userId.value = null // 파싱 실패 시 null 처리
+      alert("로그인 오류")
+      localStorage.removeItem('userId')
+      localStorage.removeItem('sraga_name')
+      router.push({ name: 'login' })
     }
   } else {
     console.error('로컬 스토리지에 userId가 없습니다.')
@@ -372,7 +394,7 @@ onMounted(() => {
   background-color: var(--color-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: 1rem;
+  padding: 0.8rem 1rem;
   transition:
     box-shadow 0.3s ease,
     transform 0.3s ease;
@@ -390,10 +412,21 @@ onMounted(() => {
 
 /* 카드 내용 영역 */
 .card-content {
-  margin-right: 1rem;
+  /* flexbox 적용하여 자식 요소(제목, 날짜)를 가로로 배치 */
+  display: flex;
+  align-items: baseline;
+  /* 텍스트 기준선 정렬 */
+  justify-content: space-between;
+  /* 제목과 날짜 사이에 공간 배분 */
+  gap: 0.5rem;
+  /* 제목과 날짜 사이 최소 간격 */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* 내용이 넘칠 경우 숨김 (자식 요소에서 처리) */
+  /* white-space, text-overflow는 자식 요소로 이동 */
+  margin-right: 1rem;
+  /* 액션 버튼과의 간격 유지 */
+  flex-grow: 1;
+  /* 가능한 많은 공간 차지 */
 }
 
 /* 스크립트 이름 */
@@ -401,6 +434,27 @@ onMounted(() => {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
+  /* 기본 마진 제거 */
+  /* 이름이 길 경우 잘림 처리 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  /* 공간 부족 시 이름이 줄어들도록 함 */
+}
+
+/* 스크립트 날짜 스타일 수정 */
+.script-date {
+  font-size: 0.8rem;
+  /* 작은 글씨 크기 */
+  color: var(--color-text-secondary);
+  /* 회색 계열 (정의된 변수 사용) */
+  margin: 0;
+  /* 기본 마진 제거 */
+  white-space: nowrap;
+  /* 줄바꿈 방지 */
+  flex-shrink: 0;
+  /* 날짜는 줄어들지 않도록 함 */
 }
 
 /* 카드 액션 영역 */
@@ -410,7 +464,7 @@ onMounted(() => {
 
 /* 자세히 보기 버튼 */
 .btn-primary.btn-sm {
-  padding: 5px 8px;
+  padding: 6px 8px;
   font-size: 12px;
   display: inline-flex;
   align-items: center;
@@ -496,8 +550,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0.8rem;
+  /* border-bottom: 1px solid var(--color-border); */
   padding-bottom: 0.75rem;
 }
 
