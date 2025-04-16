@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-// import { api } from '../services/api'
 
-// 상태 변수들 부분에 docxUrl 추가
-const selectedFile = ref<File | null>(null)
-const previewUrl = ref<string | null>(null)
+// 상태 변수들
+const selectedFiles = ref<File[]>([])
+const previewUrls = ref<string[]>([])
 const uploadStatus = ref<string>('')
 const isUploading = ref(false)
-const docxUrl = ref<string | null>(null) // 문서 다운로드 URL
+const uploadSuccess = ref(false)
+const userName = ref('') // 사용자 이름 입력값
+
+// 생성된 파일 목록 관리
+const generatedFiles = ref<{id: string, name: string}[]>([])
+// 유저의 영수증 목록 관리
+const userReceipts = ref<{id: string, name: string}[]>([])
+const isLoadingReceipts = ref(false)
+const loadReceiptError = ref<string | null>(null)
 
 interface ReceiptItem {
   name: string
@@ -21,42 +28,51 @@ interface ReceiptData {
   total_amount?: number
   items?: ReceiptItem[]
   raw_text?: string
+  receipt_ids?: string[] // 영수증 ID 배열 추가
+  file_names?: string[] // 파일 이름 배열 추가
 }
 
 const receiptData = ref<ReceiptData | null>(null)
 
-// 파일 선택 핸들러
+// 파일 선택 핸들러 - 여러 파일 처리
 function handleFileSelect(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
-    selectedFile.value = input.files[0]
+    const newFiles = Array.from(input.files)
+    selectedFiles.value = [...selectedFiles.value, ...newFiles]
 
     // 이미지 미리보기 생성
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewUrl.value = e.target?.result as string
+    for (const file of newFiles) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        previewUrls.value.push(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(selectedFile.value)
 
     // 업로드 상태 초기화
     uploadStatus.value = ''
+    uploadSuccess.value = false
     receiptData.value = null
   }
 }
 
 // 파일 업로드 함수
-// uploadReceipt 함수 수정
 async function uploadReceipt() {
-  if (!selectedFile.value) {
+  if (selectedFiles.value.length === 0) {
     uploadStatus.value = '파일을 선택해주세요.'
     return
   }
 
-  // Get scriptId and sraga_name from localStorage
-  const userId = localStorage.getItem('userId')
-  const name = localStorage.getItem('sraga_name') || 'test'
+  if (!userName.value.trim()) {
+    uploadStatus.value = '사용자 이름을 입력해주세요.'
+    return
+  }
 
-  if (!userId || !name) {
+  // Get userId from localStorage
+  const userId = localStorage.getItem('userId')
+
+  if (!userId) {
     uploadStatus.value = '사용자 정보가 없습니다.'
     return
   }
@@ -64,14 +80,19 @@ async function uploadReceipt() {
   try {
     isUploading.value = true
     uploadStatus.value = '업로드 중...'
-    docxUrl.value = null // 초기화
+    uploadSuccess.value = false
 
     const formData = new FormData()
-    formData.append('files', selectedFile.value)
+    
+    // 여러 파일 추가
+    selectedFiles.value.forEach((file) => {
+      formData.append(`files`, file)
+    })
+    
     formData.append('user_id', userId)
-    formData.append('name', name)
+    formData.append('name', userName.value) // 입력받은 사용자 이름 사용
 
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://3.39.195.183.nip.io'
     const response = await fetch(`${apiBaseUrl}/receipt/upload`, {
       method: 'POST',
       body: formData,
@@ -81,65 +102,169 @@ async function uploadReceipt() {
       throw new Error(`API 오류: ${response.status}`)
     }
 
-    // 응답 헤더에서 파일명 추출
-    const contentDisposition = response.headers.get('content-disposition')
-    let filename = 'expense_report.docx'
-
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1]
-      }
-    }
-
-    // Blob 생성 및 다운로드 URL 설정
-    const blob = await response.blob()
-    docxUrl.value = URL.createObjectURL(blob)
-
-    // JSON 데이터가 있는 경우 처리 (서버 응답이 JSON인 경우)
-    if (response.headers.get('content-type')?.includes('application/json')) {
+    // 응답 처리 로직
+    const contentType = response.headers.get('content-type') || ''
+    
+    if (contentType.includes('application/json')) {
+      // JSON 데이터 처리
       const data = await response.json()
       receiptData.value = data
+      
+      // 영수증 ID와 파일 이름 처리
+      if (data.receipt_ids && data.file_names) {
+        generatedFiles.value = []
+        for (let i = 0; i < data.receipt_ids.length; i++) {
+          generatedFiles.value.push({
+            id: data.receipt_ids[i],
+            name: data.file_names[i] || `영수증_${i+1}.docx`
+          })
+        }
+      } else if (data.receipt_id && data.file_name) {
+        // 단일 파일인 경우
+        generatedFiles.value = [{
+          id: data.receipt_id,
+          name: data.file_name || 'receipt_report.docx'
+        }]
+      }
+    } else {
+      // 바이너리 데이터(파일) 처리
+      const blob = await response.blob()
+      
+      // Content-Disposition 헤더에서 파일명 추출
+      const contentDisposition = response.headers.get('content-disposition')
+      let fileName = 'receipt_report.docx'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch && filenameMatch[1]) {
+          fileName = filenameMatch[1]
+        }
+      }
+      
+      // 임시 ID 생성하여 파일 목록에 추가
+      const tempId = 'temp_' + Date.now()
+      generatedFiles.value = [{
+        id: tempId,
+        name: fileName
+      }]
     }
-    // 성공 메시지 추가
+
+    // 성공 메시지 및 상태 업데이트
     uploadStatus.value = '업로드 성공! 분석이 완료되었습니다.'
+    uploadSuccess.value = true
+    
+    // 유저의 영수증 목록 다시 가져오기
+    await loadUserReceipts()
   } catch (error: unknown) {
     console.error('업로드 오류:', error)
     uploadStatus.value = `업로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
+    uploadSuccess.value = false
   } finally {
     isUploading.value = false
   }
 }
 
-// 파일 선택 취소 함수 수정
-function clearSelection() {
-  selectedFile.value = null
-  previewUrl.value = null
-  uploadStatus.value = ''
-  receiptData.value = null
-
-  // docxUrl이 있으면 해제
-  if (docxUrl.value) {
-    URL.revokeObjectURL(docxUrl.value)
-    docxUrl.value = null
+// 개별 파일 제거 함수
+function removeFile(index: number) {
+  selectedFiles.value.splice(index, 1)
+  previewUrls.value.splice(index, 1)
+  
+  if (selectedFiles.value.length === 0) {
+    uploadStatus.value = ''
+    uploadSuccess.value = false
+    receiptData.value = null
   }
 }
 
-// 문서 다운로드 함수 추가
-function downloadDocument() {
-  if (!docxUrl.value) return
+// 모든 파일 선택 취소 함수
+function clearAllFiles() {
+  selectedFiles.value = []
+  previewUrls.value = []
+  uploadStatus.value = ''
+  uploadSuccess.value = false
+  receiptData.value = null
+}
 
-  const a = document.createElement('a')
-  a.href = docxUrl.value
-  a.download = 'expense_report.docx'
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+// 특정 영수증 다운로드 함수
+async function downloadReceiptFile(receiptId: string, fileName: string) {
+  try {
+    // 서버에서 파일 다운로드
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://3.39.195.183.nip.io'
+    const response = await fetch(`${apiBaseUrl}/receipt/download?receipt_id=${receiptId}`)
+    
+    if (!response.ok) {
+      throw new Error(`다운로드 오류: ${response.status}`)
+    }
+    
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    
+    // URL 해제
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('다운로드 오류:', error)
+    alert(`파일 다운로드 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`)
+  }
+}
+
+// 사용자의 영수증 목록 가져오기
+async function loadUserReceipts() {
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
+    loadReceiptError.value = '사용자 정보가 없습니다.'
+    return
+  }
+  
+  try {
+    isLoadingReceipts.value = true
+    loadReceiptError.value = null
+    
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://3.39.195.183.nip.io'
+    const response = await fetch(`${apiBaseUrl}/receipt/my/${userId}`)
+    
+    if (!response.ok) {
+      throw new Error(`영수증 목록 조회 오류: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    userReceipts.value = []
+    
+    // 서버 응답에서 영수증 목록 추출
+    if (Array.isArray(data)) {
+      userReceipts.value = data.map(item => ({
+        id: item.id,
+        name: item.name || `영수증_${item.id}.docx`
+      }))
+    } else if (data && typeof data === 'object') {
+      // 응답 구조가 다른 경우 처리
+      // 이미지에서 보이는 응답 구조 처리
+      const entries = Object.entries(data)
+      userReceipts.value = entries.map(([key, value]) => {
+        const item = value as any
+        return {
+          id: item.id || key,
+          name: item.name || `영수증_${key}.docx`
+        }
+      })
+    }
+  } catch (error) {
+    console.error('영수증 목록 조회 오류:', error)
+    loadReceiptError.value = `영수증 목록 조회 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
+  } finally {
+    isLoadingReceipts.value = false
+  }
 }
 
 // 컴포넌트 마운트 시 초기화
 onMounted(() => {
-  // 필요한 초기화 작업
+  // 영수증 목록 로드
+  loadUserReceipts()
 })
 </script>
 
@@ -150,113 +275,156 @@ onMounted(() => {
       <p class="description">영수증 이미지를 업로드하면 내용을 자동으로 분석합니다.</p>
     </div>
 
-    <div class="upload-container">
-      <div class="file-input-wrapper">
-        <input
-          type="file"
-          id="receipt-upload"
-          accept="image/*"
-          @change="handleFileSelect"
-          :disabled="isUploading"
-        />
-        <label for="receipt-upload" class="file-input-label">
-          <span class="material-icon">upload_file</span>
-          영수증 이미지 선택
-        </label>
-
-        <div v-if="selectedFile" class="selected-file">
-          <p>{{ selectedFile.name }} ({{ (selectedFile.size / 1024).toFixed(1) }} KB)</p>
-          <button class="btn-icon" @click="clearSelection" :disabled="isUploading">
-            <span class="material-icon">close</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="preview-actions" v-if="previewUrl">
-        <div class="image-preview">
-          <img :src="previewUrl" alt="영수증 미리보기" />
+    <!-- 2단 레이아웃 컨테이너 -->
+    <div class="content-container">
+      <!-- 왼쪽: 파일 업로드 및 생성된 파일 컨테이너 -->
+      <div class="upload-container">
+        <!-- 업로드 성공 메시지 -->
+        <div v-if="uploadSuccess" class="success-message">
+          <div class="success-icon">
+            <span class="material-icon">check_circle</span>
+          </div>
+          <p>업로드 성공! 분석이 완료되었습니다.</p>
         </div>
 
-        <div class="actions">
-          <button
-            class="btn-primary"
-            @click="uploadReceipt"
-            :disabled="isUploading || !selectedFile"
-          >
-            <span class="material-icon">cloud_upload</span>
-            분석하기
-          </button>
+        <div class="file-input-wrapper">
+          <input
+            type="file"
+            id="receipt-upload"
+            accept="image/*"
+            @change="handleFileSelect"
+            :disabled="isUploading"
+            multiple
+          />
+          <label for="receipt-upload" class="file-input-label">
+            <span class="material-icon">upload_file</span>
+            영수증 이미지 선택 (여러장 가능)
+          </label>
+
+          <!-- 선택된 파일 목록 -->
+          <div v-if="selectedFiles.length > 0" class="selected-files-list">
+            <div v-for="(file, index) in selectedFiles" :key="index" class="selected-file">
+              <p>{{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)</p>
+              <button class="btn-icon" @click="removeFile(index)" :disabled="isUploading">
+                <span class="material-icon">close</span>
+              </button>
+            </div>
+            <button 
+              v-if="selectedFiles.length > 1" 
+              class="btn-clear-all" 
+              @click="clearAllFiles" 
+              :disabled="isUploading"
+            >
+              모두 지우기
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div
-      v-if="uploadStatus"
-      class="status-message"
-      :class="{
-        error: uploadStatus.includes('실패'),
-        loading: uploadStatus.includes('업로드 중'),
-        success: uploadStatus.includes('성공'),
-      }"
-    >
-      <span class="status-icon material-icon">
-        {{
-          uploadStatus.includes('실패')
-            ? 'error'
-            : uploadStatus.includes('업로드 중')
-              ? 'hourglass_top'
-              : uploadStatus.includes('성공')
-                ? 'check_circle'
-                : 'info'
-        }}
-      </span>
-      <span class="status-text">{{ uploadStatus }}</span>
-      <div v-if="uploadStatus.includes('업로드 중')" class="loading-spinner"></div>
-    </div>
+        <!-- 미리보기 섹션 -->
+        <div class="preview-section" v-if="previewUrls.length > 0">
+          <div class="preview-container">
+            <div v-for="(preview, index) in previewUrls" :key="index" class="preview-item">
+              <div class="image-preview">
+                <img :src="preview" :alt="`영수증 미리보기 ${index + 1}`" />
+              </div>
+              <div class="preview-caption">이미지 #{{ index + 1 }}</div>
+            </div>
+          </div>
 
-    <!-- 문서 다운로드 섹션 추가 -->
-    <div v-if="docxUrl" class="document-download">
-      <div class="download-card">
-        <button class="btn-download" @click="downloadDocument">
-          <span class="material-icon">download</span>
-          다운로드
-        </button>
-      </div>
-    </div>
-
-    <div v-if="receiptData" class="receipt-data">
-      <h3>분석 결과</h3>
-
-      <div class="data-section">
-        <h4>기본 정보</h4>
-        <div class="data-item">
-          <span class="label">상점명:</span>
-          <span class="value">{{ receiptData.store_name || '인식 불가' }}</span>
+          <div class="actions">
+            <div class="action-container">
+              <input 
+                type="text" 
+                v-model="userName" 
+                placeholder="파일명을 입력하세요" 
+                class="name-input"
+                :disabled="isUploading"
+              />
+              <button
+                class="btn-primary"
+                @click="uploadReceipt"
+                :disabled="isUploading || selectedFiles.length === 0"
+              >
+                <span class="material-icon">cloud_upload</span>
+                보고서 생성
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="data-item">
-          <span class="label">날짜:</span>
-          <span class="value">{{ receiptData.date || '인식 불가' }}</span>
-        </div>
-        <div class="data-item">
-          <span class="label">총액:</span>
-          <span class="value">{{ receiptData.total_amount || '인식 불가' }}</span>
-        </div>
-      </div>
 
-      <div class="data-section" v-if="receiptData.items && receiptData.items.length > 0">
-        <h4>구매 항목</h4>
-        <div class="items-list">
-          <div v-for="(item, index) in receiptData.items" :key="index" class="item">
-            <span class="item-name">{{ item.name }}</span>
-            <span class="item-quantity">{{ item.quantity || 1 }}개</span>
-            <span class="item-price">{{ item.price }}원</span>
+        <!-- 로딩 메시지 -->
+        <div v-if="isUploading" class="loading-message">
+          <div class="loading-spinner"></div>
+          <p>업로드 중...</p>
+        </div>
+
+        <!-- 오류 메시지 -->
+        <div v-if="uploadStatus && uploadStatus.includes('실패')" class="error-message">
+          <span class="material-icon">error</span>
+          <p>{{ uploadStatus }}</p>
+        </div>
+        
+        <!-- 생성된 파일 섹션 -->
+        <div class="generated-files-section" v-if="generatedFiles.length > 0">
+          <h3 class="section-title">생성된 파일</h3>
+          
+          <div class="files-list">
+            <div v-for="(file, index) in generatedFiles" :key="index" class="file-item">
+              <div class="file-info">
+                <span class="material-icon">description</span>
+                <span class="file-name">{{ file.name }}</span>
+              </div>
+              <button class="btn-download" @click="downloadReceiptFile(file.id, file.name)">
+                <span class="material-icon">download</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="data-section">
-        <h4>원본 텍스트</h4>
-        <pre class="raw-text">{{ receiptData.raw_text || '텍스트 추출 실패' }}</pre>
+      <!-- 오른쪽: 유저의 영수증 목록 컨테이너 -->
+      <div class="receipt-list-container">
+        <div class="receipt-header">
+          <h3 class="section-title">내 영수증 목록</h3>
+          <button class="btn-refresh" @click="loadUserReceipts" :disabled="isLoadingReceipts">
+            <span class="material-icon">refresh</span>
+            목록 새로고침
+          </button>
+        </div>
+        
+        <!-- 로딩 표시 -->
+        <div v-if="isLoadingReceipts" class="loading-message">
+          <div class="loading-spinner"></div>
+          <p>영수증 목록 로딩 중...</p>
+        </div>
+        
+        <!-- 오류 메시지 -->
+        <div v-if="loadReceiptError" class="error-message">
+          <span class="material-icon">error</span>
+          <p>{{ loadReceiptError }}</p>
+        </div>
+        
+        <!-- 영수증 목록 -->
+        <div class="files-list">
+          <div v-if="userReceipts.length > 0">
+            <div v-for="(receipt, index) in userReceipts" :key="index" class="file-item">
+              <div class="file-info">
+                <span class="material-icon">receipt</span>
+                <span class="file-name">{{ receipt.name }}</span>
+              </div>
+              <button class="btn-download" @click="downloadReceiptFile(receipt.id, receipt.name)">
+                <span class="material-icon">download</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- 영수증이 없을 때 메시지 -->
+          <div v-else-if="!isLoadingReceipts && !loadReceiptError" class="no-files-message">
+            <span class="material-icon">folder_open</span>
+            <p>저장된 영수증이 없습니다.</p>
+            <p class="sub-text">영수증을 분석하면 목록에 추가됩니다.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -264,7 +432,7 @@ onMounted(() => {
 
 <style scoped>
 .receipt-view {
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -286,12 +454,41 @@ onMounted(() => {
   font-size: 16px;
 }
 
+/* 2단 레이아웃 컨테이너 */
+.content-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* 왼쪽 업로드 컨테이너 */
 .upload-container {
   background-color: var(--color-white);
   border-radius: var(--radius-md);
   padding: 24px;
-  margin-bottom: 24px;
   box-shadow: var(--shadow-sm);
+  width: 538.01px;
+  height: 688.3px;
+  overflow-y: auto;
+}
+
+/* 오른쪽 영수증 목록 컨테이너 */
+.receipt-list-container {
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  width: 538.01px;
+  height: 688.3px;
+  position: relative;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--color-text);
 }
 
 .file-input-wrapper {
@@ -314,141 +511,365 @@ onMounted(() => {
   align-items: center;
   background-color: var(--color-primary);
   color: var(--color-white);
-  padding: 12px 20px;
+  padding: 10px 20px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   transition: background-color 0.2s;
-  cursor: pointer; /* 추가: 커서를 포인터로 변경 */
+  cursor: pointer;
 }
 
 .file-input-label:hover {
   background-color: var(--color-primary-dark);
 }
 
+.selected-files-list {
+  margin-top: 16px;
+}
+
 .selected-file {
   display: flex;
+  height: 45px;
   align-items: center;
   justify-content: space-between;
+  margin-top: 8px;
+  padding: 10px;
+  background-color: var(--color-background);
+  border-radius: var(--radius-sm);
+
+}
+
+.btn-clear-all {
   margin-top: 12px;
-  padding: 12px;
   background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
-}
-
-.image-preview {
-  margin-top: 16px;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.receipt-data {
-  background-color: var(--color-white);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-}
-
-.data-section {
-  margin-bottom: 24px;
-}
-
-.data-section h4 {
-  color: var(--color-text);
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.data-item {
-  display: flex;
-  margin-bottom: 12px;
-}
-
-.label {
-  width: 100px;
-  font-weight: 600;
   color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.items-list .item {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px;
-  background-color: var(--color-background);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
+.btn-clear-all:hover {
+  background-color: var(--color-background-dark);
 }
 
-.document-download {
-  margin: 24px 0;
-}
-
-.download-card {
-  background-color: var(--color-white);
-  border-radius: var(--radius-md);
+/* 업로드 성공 메시지 */
+.success-message {
   padding: 16px;
   display: flex;
   align-items: center;
-  box-shadow: var(--shadow-sm);
+  gap: 12px;
+  background-color: #e8f5e9;
+  border-radius: var(--radius-md);
+  color: var(--color-success, #2e7d32);
+  margin-bottom: 16px;
+}
+
+.success-icon {
+  color: var(--color-success, #2e7d32);
+}
+
+.success-message p {
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 파일 목록 */
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin: 8px;
+  background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.file-name {
+  font-weight: 500;
+  word-break: break-word;
 }
 
 .btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   background-color: var(--color-primary);
   color: var(--color-white);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  font-weight: 700;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  transition: background-color 0.2s;
 }
 
 .btn-download:hover {
   background-color: var(--color-primary-dark);
 }
 
-.status-message {
+/* 파일 없음 메시지 */
+.no-files-message {
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  min-height: 200px;
   gap: 12px;
-  padding: 16px;
-  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-text-secondary);
   background-color: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+  padding: 24px;
+}
+
+.no-files-message .material-icon {
+  font-size: 48px;
+  opacity: 0.6;
+}
+
+.no-files-message p {
+  margin: 0;
+}
+
+.no-files-message .sub-text {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* 미리보기 섹션 */
+.preview-section {
+  margin-top: 24px;
+}
+
+.preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
-.status-message.loading {
+.preview-item {
+  width: calc(50% - 8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.image-preview {
+  width: 100%;
+  height: 180px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.preview-caption {
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.user-input-field {
+  width: 250px;
+}
+
+.name-input {
+  flex: 1; /* 남은 공간 모두 차지 */
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background-color: var(--color-white);
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.2);
+}
+
+.name-input:disabled {
+  background-color: var(--color-background);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.actions {
+  margin-top: 20px;
+  padding: 0 12px;
+}
+
+.action-container {
+  display: flex;
+  gap: 12px; /* 입력란과 버튼 사이 간격 */
+  align-items: center;
+}
+
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+.receipt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.receipt-header .section-title {
+  margin-bottom: 0;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-refresh:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-refresh:disabled {
+  background-color: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+.scroll-box {
+  overflow-y: auto;
+}
+
+.receipt-list-container {
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  width: 538.01px;
+  height: 688.3px;
+  position: relative;
+  overflow-y: auto; /* 스크롤 허용 */
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 60px; /* 하단 버튼을 위한 여백 */
+}
+
+.refresh-button-container {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-refresh:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-refresh:disabled {
+  background-color: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-primary:disabled {
+  background-color: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+/* 로딩 메시지 */
+.loading-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
   background-color: #e3f2fd;
+  border-radius: var(--radius-md);
   color: var(--color-primary);
 }
 
-.status-message.success {
-  background-color: #e8f5e9;
-  color: var(--color-success);
-}
-
-.status-message.error {
-  background-color: #ffebee;
-  color: var(--color-error);
-}
-
-.status-icon {
-  font-size: 24px;
-}
-
-.status-text {
-  flex: 1;
-  font-weight: 500;
-}
-
 .loading-spinner {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
@@ -464,17 +885,61 @@ onMounted(() => {
   }
 }
 
+/* 오류 메시지 */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  background-color: #ffebee;
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background-color: var(--color-background-dark);
+}
+
+/* 생성된 파일 섹션 */
+.generated-files-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* 반응형 */
 @media (max-width: 768px) {
+  .content-container {
+    grid-template-columns: 1fr;
+  }
+  
   .receipt-view {
     padding: 16px;
   }
 
-  .upload-container {
+  .upload-container, .receipt-list-container {
     padding: 16px;
   }
-
-  .receipt-data {
-    padding: 16px;
+  
+  .preview-item {
+    width: 100%;
+  }
+  
+  .image-preview {
+    height: 160px;
   }
 }
 </style>
