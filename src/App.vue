@@ -2,13 +2,12 @@
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AudioWorkletSTT from './components/AudioWorkletSTT.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const activeTab = computed(() => {
-  if (route.path === '/') return 'home'
+  if (route.path === '/main') return 'main'
   if (route.path === '/receipt') return 'receipt'
   if (route.path === '/meeting-summary') return 'meeting'
   return 'home'
@@ -22,13 +21,16 @@ function navigateTo(path: string) {
 <template>
   <div class="app-container">
     <main class="main-content">
-      <!-- <AudioWorkletSTT v-if="route.path === '/' && route.name !== 'login'" /> -->
       <RouterView />
     </main>
 
     <!-- Only show navigation when user is authenticated -->
     <nav v-if="route.name !== 'login'" class="bottom-nav">
-      <button class="nav-item" :class="{ active: activeTab === 'home' }" @click="navigateTo('/')">
+      <button
+        class="nav-item"
+        :class="{ active: activeTab === 'main' }"
+        @click="navigateTo('/main')"
+      >
         <span class="material-icon">home</span>
         <span class="nav-label">홈</span>
       </button>

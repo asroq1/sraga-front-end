@@ -42,15 +42,22 @@
 
     <div class="chat-container">
       <div class="messages" ref="messagesContainer">
-        <div v-if="finalText" class="message user">
-          <div class="message-content">{{ finalText }}</div>
+        <!-- 메시지 기록 표시 -->
+        <div
+          v-for="(message, index) in messageHistory"
+          :key="index"
+          :class="['message', message.type]"
+        >
+          <div class="message-content">
+            <div class="original-text">{{ message.text }}</div>
+            <div v-if="message.translatedText" class="translated-text">
+              {{ message.translatedText }}
+            </div>
+          </div>
         </div>
+        <!-- 중간 결과는 그대로 유지 -->
         <div v-if="interimText" class="message user interim">
           <div class="message-content">{{ interimText }}</div>
-        </div>
-        <!-- 번역된 텍스트 표시 -->
-        <div v-if="translatedText" class="message assistant">
-          <div class="message-content">{{ translatedText }}</div>
         </div>
       </div>
     </div>
@@ -67,30 +74,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-// useRouter 제거 (사용하지 않음)
-// import { useRouter } from 'vue-router'
 
-// 라우터 인스턴스 제거
-// const router = useRouter()
-
-// 페이지 이동 함수 제거
-// function navigateTo(path: string) {
-//   router.push(path)
-// }
-
-// 나머지 코드는 그대로 유지
-// useRouter 제거 (사용하지 않음)
-// import { useRouter } from 'vue-router'
-
-// 라우터 인스턴스 제거
-// const router = useRouter()
-
-// 페이지 이동 함수 제거
-// function navigateTo(path: string) {
-//   router.push(path)
-// }
-
-// 나머지 코드는 그대로 유지
 const languages = [
   { code: 'ko-KR', name: '한국어' },
   // 나머지 언어 목록은 그대로 유지
@@ -130,6 +114,17 @@ function switchLanguages() {
   logMessage(
     `🔄 언어 교환: 입력 언어=${selectedLanguage.value}, 번역 언어=${translatedLanguage.value}`,
   )
+
+  // 현재 녹음 중이라면 녹음을 중지하고 새로운 언어로 다시 시작
+  // if (isRecording.value || socketReady.value) {
+  logMessage('🔄 언어 변경으로 인해 녹음 세션을 재시작합니다.')
+  // stopRecording()
+
+  // 잠시 후 새 언어로 녹음 다시 시작
+  //   setTimeout(() => {
+  //     startRecording()
+  //   }, 500)
+  // }
 }
 
 // 기존 상태 변수들
@@ -141,6 +136,8 @@ const logs = ref('')
 const logContainer = ref(null)
 const messagesContainer = ref(null)
 const translatedText = ref('')
+// 메시지 기록을 저장할 배열 - 타입 정의 수정
+const messageHistory = ref<Array<{ type: string; text: string; translatedText?: string }>>([])
 
 // AudioContext 관련 변수들
 let socket: WebSocket | null = null
@@ -175,12 +172,14 @@ function updateInterimText(text: string) {
 // 최종 결과 추가 함수
 function addFinalText(text: string) {
   if (text && text.trim() !== '') {
-    // 이전 텍스트가 있고, 공백으로 끝나지 않으면 공백 추가
-    if (finalText.value && !finalText.value.endsWith(' ')) {
-      finalText.value += ' '
-    }
+    // 사용자 메시지를 기록에 추가
+    messageHistory.value.push({
+      type: 'user',
+      text: text,
+    })
 
-    finalText.value += text
+    // 현재 입력 텍스트 업데이트 (API 호출용)
+    finalText.value = text
     scrollToBottom()
   }
 
@@ -241,8 +240,14 @@ async function sendToOpenAI() {
     logMessage(`🔄 OpenAI API로 데이터 전송 중...`)
     // 스크립트 생성 API 호출
     await createScript()
+
+    // 번역 중임을 표시하는 임시 메시지 추가
+    const translationIndex = messageHistory.value.length - 1 // 마지막 사용자 메시지 인덱스
+    const userMessage = messageHistory.value[translationIndex]
+
     // 번역 중임을 표시
-    translatedText.value = '번역 중...'
+    userMessage.translatedText = '번역 중...'
+    scrollToBottom()
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
@@ -250,7 +255,7 @@ async function sendToOpenAI() {
     const scriptId = localStorage.getItem('scriptId')
     if (!scriptId) {
       logMessage('⚠️ Script ID가 없습니다. 번역을 진행할 수 없습니다.')
-      translatedText.value = '번역을 위한 Script ID가 없습니다.'
+      userMessage.translatedText = '번역을 위한 Script ID가 없습니다.'
       return
     }
 
@@ -262,20 +267,26 @@ async function sendToOpenAI() {
         'x-script-id': scriptId, // Script ID를 헤더에 추가
       },
       body: JSON.stringify({
-        lang: translatedLanguage.value,
+        lang: translatedLanguage.value, // 번역 언어를 사용하도록 수정
         message: finalText.value,
       }),
     })
 
+    logMessage(
+      `📤 번역 요청: 입력 언어=${selectedLanguage.value}, 메시지="${finalText.value.substring(0, 30)}${finalText.value.length > 30 ? '...' : ''}"`,
+    )
+
     if (!response.ok) {
       throw new Error(`API 오류: ${response.status}`)
     }
+
     // 응답을 텍스트 스트림으로 처리
     const reader = response.body?.getReader()
     const decoder = new TextDecoder('utf-8')
 
     // 번역 텍스트 초기화
     translatedText.value = ''
+    userMessage.translatedText = ''
 
     if (reader) {
       // 스트림 읽기 함수
@@ -304,11 +315,8 @@ async function sendToOpenAI() {
 
                 // 번역 텍스트에 추가
                 if (content) {
-                  if (translatedText.value === '번역 중...') {
-                    translatedText.value = content
-                  } else {
-                    translatedText.value += ' ' + content
-                  }
+                  translatedText.value += content + ' '
+                  userMessage.translatedText += content + ' '
                   scrollToBottom()
                 }
               }
@@ -325,7 +333,13 @@ async function sendToOpenAI() {
   } catch (error: unknown) {
     logMessage(`❌ OpenAI API 오류: ${(error as Error).message}`)
     console.error('OpenAI API 오류:', error)
-    translatedText.value = '번역 중 오류가 발생했습니다.'
+
+    // 오류 메시지 추가
+    const lastMessageIndex = messageHistory.value.length - 1
+    if (lastMessageIndex >= 0) {
+      messageHistory.value[lastMessageIndex].translatedText = '번역 중 오류가 발생했습니다.'
+    }
+    scrollToBottom()
   }
 }
 
@@ -356,15 +370,22 @@ function initializeWebSocket() {
       switch (data.type) {
         case 'interim':
           // 중간 결과 - 회색으로 표시
-          updateInterimText(data.text)
+          if (isRecording.value) {
+            // 녹음 중일 때만 중간 결과 처리
+            updateInterimText(data.text)
+          }
           break
 
         case 'final':
           // 최종 결과 - 기존 텍스트에 검은색으로 추가
-          addFinalText(data.text)
-
-          // 최종 결과를 OpenAI API로 전송
-          sendToOpenAI()
+          if (isRecording.value) {
+            // 녹음 중일 때만 최종 결과 처리
+            addFinalText(data.text)
+            // 최종 결과를 OpenAI API로 전송
+            sendToOpenAI()
+            // 녹음 중지
+            stopRecording()
+          }
           break
 
         case 'system':
@@ -381,6 +402,7 @@ function initializeWebSocket() {
           // 종료 메시지
           logMessage(`✅ 음성 인식 종료`)
           clearInterimText()
+          isRecording.value = false
           break
       }
     } catch (error: unknown) {
@@ -400,16 +422,32 @@ function initializeWebSocket() {
 
 // 녹음 시작 함수
 async function startRecording() {
-  if (!socketReady.value) {
-    logMessage('❌ WebSocket 연결이 안 됨!')
-    return
-  }
-
-  // 녹음 시작 시 이전 결과 초기화
-  finalText.value = ''
-  translatedText.value = ''
-
   try {
+    // 소켓이 없거나 연결이 닫혀있으면 새로 연결
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      logMessage('🔄 WebSocket 연결 시작...')
+      // 소켓 연결 호출
+      initializeWebSocket()
+
+      // 소켓 연결이 완료될 때까지 대기
+      await new Promise<void>((resolve, reject) => {
+        const checkSocketReady = () => {
+          if (socketReady.value) {
+            resolve()
+          } else if (socket && socket.readyState === WebSocket.CLOSED) {
+            reject(new Error('WebSocket 연결 실패'))
+          } else {
+            setTimeout(checkSocketReady, 100)
+          }
+        }
+        checkSocketReady()
+      })
+    }
+
+    // 녹음 시작 시 이전 결과 초기화 (finalText와 translatedText만 초기화)
+    finalText.value = ''
+    translatedText.value = ''
+
     audioContext = new AudioContext({ sampleRate: 16000 })
     // AudioWorklet 프로세서 모듈 추가 (public 폴더에 위치)
     await audioContext.audioWorklet.addModule('/recorder-processor.js')
@@ -426,12 +464,14 @@ async function startRecording() {
     workletNode.connect(audioContext.destination)
 
     workletNode.port.onmessage = (e) => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
+      // 녹음 중일 때만 데이터 전송
+      if (isRecording.value && socket && socket.readyState === WebSocket.OPEN) {
         socket.send(e.data)
-        // 로그로 데이터 전송은 UI 업데이트가 많아 주석 처리
-        // logMessage(`📤 청크 전송 (${e.data.byteLength} bytes)`);
       }
     }
+
+    // 녹음 상태를 먼저 true로 설정
+    isRecording.value = true
 
     // socket이 null이 아닌지 확인 후 메시지 전송
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -443,9 +483,11 @@ async function startRecording() {
       throw new Error('WebSocket 연결이 활성화되지 않았습니다.')
     }
 
-    isRecording.value = true
     logMessage('🎙️ 녹음 시작됨...')
   } catch (err: unknown) {
+    // 오류 발생 시 녹음 상태 초기화
+    isRecording.value = false
+
     // err를 unknown 타입으로 명시적 지정 후 타입 가드 사용
     const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류'
     logMessage(`❌ 오류 발생: ${errorMessage}`)
@@ -455,6 +497,14 @@ async function startRecording() {
 
 // 나머지 함수들은 그대로 유지
 function stopRecording() {
+  // 녹음 중이 아니면 중복 중지 방지
+  if (!isRecording.value && !audioContext && !audioStream) {
+    return
+  }
+
+  // 먼저 녹음 상태를 false로 설정하여 데이터 전송 중단
+  isRecording.value = false
+
   if (audioContext) {
     audioContext.close()
     audioContext = null
@@ -474,11 +524,10 @@ function stopRecording() {
       logMessage(
         `📤 최종 텍스트를 OpenAI API로 전송합니다. (${selectedLanguage.value} → ${translatedLanguage.value})`,
       )
-      sendToOpenAI()
+      // sendToOpenAI() // 주석 해제
     }
   }
 
-  isRecording.value = false
   logMessage('⏹️ 녹음 중지 완료.')
 
   // 중간 결과 초기화
@@ -487,6 +536,7 @@ function stopRecording() {
 
 // 컴포넌트 마운트 시 WebSocket 초기화
 onMounted(() => {
+  // 컴포넌트 마운트 시 소켓 연결 시도
   initializeWebSocket()
 })
 
@@ -685,6 +735,7 @@ button {
 .message {
   display: flex;
   max-width: 80%;
+  margin-bottom: 8px;
 }
 
 .message.user {
@@ -695,12 +746,28 @@ button {
   align-self: flex-start;
 }
 
+/* 메시지 스타일 수정 */
 .message-content {
   padding: 12px 16px;
   border-radius: 18px;
   background-color: #e8f0fe;
   color: #202124;
   box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.original-text {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.translated-text {
+  font-size: 14px;
+  color: #5f6368;
+  margin-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-top: 6px;
 }
 
 .message.interim .message-content {
