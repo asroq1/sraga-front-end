@@ -5,7 +5,7 @@
     </div>
 
     <div class="list-header">
-      <h1 class="view-title">스크립트 목록</h1>
+      <h1 class="view-title">미팅 목록</h1>
       <button @click="createNewMeeting" class="btn-primary create-meeting-btn">
         <span class="material-icon">add_circle_outline</span>
         <span>새 미팅 생성</span>
@@ -43,12 +43,7 @@
     </div>
 
     <div v-if="showModal" class="modal-overlay" @click.self="cancelModal">
-      <div
-        class="modal-container card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-      >
+      <div class="modal-container card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
           <h3 id="modal-title" class="modal-title">새 미팅 이름 입력</h3>
           <button @click="cancelModal" class="modal-close-btn" aria-label="닫기">
@@ -57,19 +52,13 @@
         </div>
         <div class="modal-body">
           <label for="meetingNameInput" class="input-label">미팅 이름:</label>
-          <input
-            id="meetingNameInput"
-            type="text"
-            v-model="newMeetingName"
-            placeholder="미팅 이름을 입력하세요"
-            class="modal-input"
-            @keyup.enter="saveMeetingName"
-          />
+          <input id="meetingNameInput" type="text" v-model="newMeetingName" placeholder="미팅 이름을 입력하세요"
+            class="modal-input" @keyup.enter="saveMeetingName" />
           <p v-if="showNameRequiredWarning" class="warning-text">미팅 이름을 입력해주세요.</p>
         </div>
         <div class="modal-footer">
           <button @click="cancelModal" class="btn-secondary">취소</button>
-          <button @click="saveMeetingName" class="btn-primary">저장</button>
+          <button @click="saveMeetingName" class="btn-primary">생성</button>
         </div>
       </div>
     </div>
@@ -83,13 +72,25 @@ import { api } from '@/services/api'
 
 // --- 상수 정의 ---
 const URI_SCRIPT_ALL: string = '/script/all/'
-const MEETING_NAME_KEY = 'new_meeting_name' // 로컬 스토리지 키
+const URI_SCRIPT_CREATE: string = '/script/create'
 
 // --- 인터페이스 정의 ---
 interface Script {
   id: number | string
   name?: string
 }
+
+interface CreateScriptBody {
+  user_id: number
+  name: string
+}
+
+interface CreateScriptData {
+  id: string
+  name: string
+}
+
+
 
 // --- 컴포넌트 상태 변수 ---
 const scripts = ref<Script[]>([])
@@ -115,8 +116,6 @@ const viewScriptDetail = (scriptId: number | string) => {
 
 // 새 미팅 생성 버튼 클릭 시 (모달 열기)
 const createNewMeeting = () => {
-  // 기존 로컬 스토리지 값 삭제
-  localStorage.removeItem(MEETING_NAME_KEY)
   // 입력 필드 초기화
   newMeetingName.value = ''
   showNameRequiredWarning.value = false // 경고 초기화
@@ -130,28 +129,39 @@ const cancelModal = () => {
   showNameRequiredWarning.value = false // 경고 초기화
 }
 
-// a
 // 모달: 저장 버튼 클릭 시 (저장 후 'script' 라우트로 이동)
-const saveMeetingName = () => {
+const saveMeetingName = async () => {
   // 입력값 검증
   if (!newMeetingName.value.trim()) {
     showNameRequiredWarning.value = true // 경고 표시
     return // 저장 중단
   }
 
+  let script_Id = null
   const meetingNameToSave = newMeetingName.value.trim()
-  // 로컬 스토리지에 저장
-  localStorage.setItem(MEETING_NAME_KEY, meetingNameToSave)
-  console.log(`미팅 이름 "${meetingNameToSave}" 저장됨`)
-
   // 모달 닫기
   showModal.value = false
   showNameRequiredWarning.value = false // 경고 초기화
 
-  console.log('스크립트 생성 후 라우트 이동')
+  const body: CreateScript = {
+    user_id: userId.value,
+    name: meetingNameToSave
+  }
+
+  // script id 생성
+  try {
+    const response: CreateScriptData = await api.post(URI_SCRIPT_CREATE, body)
+    script_Id = response.id
+
+  } catch (err) {
+    if (err instanceof Error) {
+      error.value = '서버와 통신 중 문제가 발생했습니다.'
+    } else {
+      error.value = '알 수 없는 오류가 발생했습니다.'
+    }
+  }
   // 저장 후 'script' 라우트로 이동
-  // 필요하다면 저장된 이름이나 다른 정보를 query 또는 params로 전달할 수 있음
-  router.push({ name: 'script' })
+  router.push({ name: 'script', params: { id: script_Id } })
 }
 
 // 스크립트 목록 로딩 및 정렬 함수
@@ -174,7 +184,7 @@ const loadScripts = async () => {
     } else if (Array.isArray(response)) {
       fetchedScripts = response
     } else {
-      console.warn('예상치 못한 API 응답 구조:', response)
+      // console.warn('예상치 못한 API 응답 구조:', response)
       fetchedScripts = []
     }
 
@@ -187,9 +197,11 @@ const loadScripts = async () => {
 
     scripts.value = fetchedScripts // 정렬된 배열을 최종 할당
   } catch (err) {
-    console.error('미팅 목록 로딩 실패:', err)
+    console.error('미팅 목록 로딩 실패:')
+    console.log(err)
     if (err instanceof Error) {
-      error.value = err.message || '서버와 통신 중 문제가 발생했습니다.'
+      if (err.message === 'API 오류: 404') error.value = '미팅 목록이 없습니다.'
+      else error.value = '서버와 통신 중 문제가 발생했습니다.'
     } else {
       error.value = '알 수 없는 오류가 발생했습니다.'
     }
