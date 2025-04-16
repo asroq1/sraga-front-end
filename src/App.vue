@@ -7,7 +7,7 @@ const route = useRoute()
 const router = useRouter()
 
 const activeTab = computed(() => {
-  if (route.path === '/main') return 'main'
+  if (route.path === '/script-list') return 'home'
   if (route.path === '/receipt') return 'receipt'
   if (route.path === '/meeting-summary') return 'meeting'
   return 'home'
@@ -28,19 +28,27 @@ function navigateTo(path: string) {
     <nav v-if="route.name !== 'login'" class="bottom-nav">
       <button
         class="nav-item"
-        :class="{ active: activeTab === 'main' }"
-        @click="navigateTo('/main')"
+        :class="{ active: activeTab === 'home' }"
+        @click="navigateTo('/script-list')"
       >
         <span class="material-icon">home</span>
         <span class="nav-label">홈</span>
       </button>
 
-      <button class="nav-item" :class="{ active: activeTab === 'receipt' }" @click="navigateTo('/receipt')">
+      <button
+        class="nav-item"
+        :class="{ active: activeTab === 'receipt' }"
+        @click="navigateTo('/receipt')"
+      >
         <span class="material-icon">receipt</span>
         <span class="nav-label">영수증</span>
       </button>
 
-      <button class="nav-item" :class="{ active: activeTab === 'meeting' }" @click="navigateTo('/meeting-summary')">
+      <button
+        class="nav-item"
+        :class="{ active: activeTab === 'meeting' }"
+        @click="navigateTo('/meeting-summary')"
+      >
         <span class="material-icon">summarize</span>
         <span class="nav-label">회의 요약</span>
       </button>

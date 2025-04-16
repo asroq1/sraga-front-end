@@ -19,7 +19,7 @@ async function handleRegister() {
     error.value = ''
 
     await registerUser(userName.value.trim())
-    router.push('/main')
+    router.push('/script-list')
   } catch (err) {
     error.value = '등록 중 오류가 발생했습니다. 다시 시도해주세요.'
     console.error('등록 오류:', err)

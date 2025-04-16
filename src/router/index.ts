@@ -9,15 +9,9 @@ import { loadUserFromStorage } from '../services/userService'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // {
-    //   path: '/',
-    //   name: '',
-    //   component: MainView,
-    //   meta: { requiresAuth: true },
-    // },
     {
-      path: '/main',
-      name: 'main',
+      path: '/script/:id?',
+      name: 'script',
       component: MainView,
       meta: { requiresAuth: true },
     },
@@ -43,7 +37,7 @@ const router = createRouter({
       name: 'script-list',
       component: () => ScriptListView,
       meta: { requiresAuth: true },
-    }
+    },
   ],
 })
 
