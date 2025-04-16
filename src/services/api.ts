@@ -13,7 +13,7 @@ export const api = {
   },
 
   // POST 요청
-  async post(endpoint: string, data: Record<string, unknown>) {
+  async post(endpoint: string, data: any) {
     const response = await fetch(`${apiBaseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
