@@ -3,6 +3,7 @@ import MainView from '../components/AudioWorkletSTT.vue'
 import ReceiptView from '../views/ReceiptView.vue'
 import MeetingSummaryView from '../views/MeetingSummaryView.vue'
 import LoginView from '../views/LoginView.vue'
+import ScriptListView from '@/views/ScriptListView.vue'
 import { loadUserFromStorage } from '../services/userService'
 
 const router = createRouter({
@@ -37,6 +38,12 @@ const router = createRouter({
       component: MeetingSummaryView,
       meta: { requiresAuth: true },
     },
+    {
+      path: '/script-list',
+      name: 'script-list',
+      component: () => ScriptListView,
+      meta: { requiresAuth: true },
+    }
   ],
 })
 

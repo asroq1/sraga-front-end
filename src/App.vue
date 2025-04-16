@@ -33,20 +33,12 @@ function navigateTo(path: string) {
         <span class="nav-label">홈</span>
       </button>
 
-      <button
-        class="nav-item"
-        :class="{ active: activeTab === 'receipt' }"
-        @click="navigateTo('/receipt')"
-      >
+      <button class="nav-item" :class="{ active: activeTab === 'receipt' }" @click="navigateTo('/receipt')">
         <span class="material-icon">receipt</span>
         <span class="nav-label">영수증</span>
       </button>
 
-      <button
-        class="nav-item"
-        :class="{ active: activeTab === 'meeting' }"
-        @click="navigateTo('/meeting-summary')"
-      >
+      <button class="nav-item" :class="{ active: activeTab === 'meeting' }" @click="navigateTo('/meeting-summary')">
         <span class="material-icon">summarize</span>
         <span class="nav-label">회의 요약</span>
       </button>
@@ -80,7 +72,8 @@ body {
 /* 메인 콘텐츠 영역 */
 .main-content {
   flex: 1;
-  padding: 0 0 70px 0; /* 하단 네비게이션 바 높이만큼 패딩 추가 */
+  padding: 0 0 70px 0;
+  /* 하단 네비게이션 바 높이만큼 패딩 추가 */
   overflow-y: auto;
 }
 
@@ -127,7 +120,6 @@ body {
 /* 아이콘 스타일 */
 .material-icon {
   font-size: 24px;
-  margin-bottom: 4px;
 }
 
 /* 네비게이션 라벨 */
