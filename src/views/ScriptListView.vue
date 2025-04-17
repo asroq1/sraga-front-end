@@ -28,6 +28,10 @@
           <h2 class="script-name">{{ script.name || '제목 없음' }}</h2>
         </div>
         <div class="card-actions">
+          <button @click="meetingSummaryRoute(script.id)" class="btn-primary btn-sm">
+            <span>회의 요약</span>
+            <span class="material-icon">arrow_forward_ios</span>
+          </button>
           <button @click="viewScriptDetail(script.id)" class="btn-primary btn-sm">
             <span>자세히 보기</span>
             <span class="material-icon">arrow_forward_ios</span>
@@ -121,6 +125,15 @@ const viewScriptDetail = (scriptId: number | string) => {
   // 'script' 라우트로 id 파라미터와 함께 이동
   console.log('scriptId', scriptId)
   router.push({ name: 'script', params: { id: scriptId } })
+}
+
+// 회의 요약 라우트
+const meetingSummaryRoute = (scriptId: string | number) => {
+  console.log('Navigating to meeting summary with scriptId:', scriptId)
+  router.push({
+    path: '/meeting-summary',
+    query: { scriptId: scriptId.toString() },
+  })
 }
 
 // 새 미팅 생성 버튼 클릭 시 (모달 열기)
