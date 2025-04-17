@@ -48,7 +48,12 @@
     </div>
 
     <div v-if="showModal" class="modal-overlay" @click.self="cancelModal">
-      <div class="modal-container card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div
+        class="modal-container card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
         <div class="modal-header">
           <h3 id="modal-title" class="modal-title">미팅 이름 입력</h3>
           <button @click="cancelModal" class="modal-close-btn" aria-label="닫기">
@@ -56,8 +61,14 @@
           </button>
         </div>
         <div class="modal-body">
-          <input id="meetingNameInput" type="text" v-model="newMeetingName" placeholder="미팅 이름을 입력하세요"
-            class="modal-input" @keyup.enter="saveMeetingName" />
+          <input
+            id="meetingNameInput"
+            type="text"
+            v-model="newMeetingName"
+            placeholder="미팅 이름을 입력하세요"
+            class="modal-input"
+            @keyup.enter="saveMeetingName"
+          />
           <p v-if="showNameRequiredWarning" class="warning-text">미팅 이름을 입력해주세요.</p>
         </div>
         <div class="modal-footer">
@@ -204,9 +215,8 @@ const loadScripts = async () => {
     fetchedScripts.sort((a, b) => {
       // Date 객체는 getTime()을 사용하여 숫자 타임스탬프로 변환 후 비교합니다.
       // b의 시간에서 a의 시간을 빼면 내림차순 정렬이 됩니다.
-      return b.created_date.getTime() - a.created_date.getTime();
+      return b.created_date.getTime() - a.created_date.getTime()
     })
-
 
     scripts.value = fetchedScripts // 정렬된 배열을 최종 할당
   } catch (err) {
@@ -227,28 +237,31 @@ const loadScripts = async () => {
 // 날짜 포맷팅 함수 수정
 const formatDate = (date: Date): string => {
   if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-    return '날짜 정보 없음';
+    return '날짜 정보 없음'
   }
 
-  const today = new Date();
+  const today = new Date()
   const isToday =
     date.getFullYear() === today.getFullYear() &&
     date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate();
+    date.getDate() === today.getDate()
 
   if (isToday) {
     // 오늘 날짜인 경우: HH:MM 형식
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes}`
   } else {
     // 오늘이 아닌 경우: YYYY-MM-DD 형식
     // 기존 로직 사용 (한국 로케일 기준)
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).replace(/\. /g, '-').replace('.', '');
+    return date
+      .toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      })
+      .replace(/\. /g, '-')
+      .replace('.', '')
   }
 }
 
@@ -259,7 +272,7 @@ onMounted(() => {
   if (storedUserId) {
     userId.value = parseInt(storedUserId, 10) // 10진수로 파싱
     if (isNaN(userId.value)) {
-      alert("로그인 오류")
+      alert('로그인 오류')
       localStorage.removeItem('userId')
       localStorage.removeItem('sraga_name')
       router.push({ name: 'login' })
