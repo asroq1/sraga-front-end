@@ -18,8 +18,11 @@ async function handleRegister() {
     isRegistering.value = true
     error.value = ''
 
+    // 사용자 등록 또는 조회
     await checkAndRegisterUser(userName.value.trim())
-    router.push('/script-list')
+
+    // 배포 환경에서는 window.location.href를 사용하여 직접 페이지 이동
+    window.location.href = '/script-list'
   } catch (err) {
     error.value = '등록 중 오류가 발생했습니다. 다시 시도해주세요.'
     console.error('등록 오류:', err)
