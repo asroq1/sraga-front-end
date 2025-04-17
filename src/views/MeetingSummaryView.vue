@@ -29,8 +29,8 @@ const summaryData = reactive({
 const isProcessing = ref(false)
 const errorMessage = ref<string | null>(null)
 
-// const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-const apiBaseUrl = 'http://localhost:8000'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+// const apiBaseUrl = 'http://localhost:8000'
 
 // 1. 회의 원문 가져오기
 async function fetchScriptText(id: string) {
