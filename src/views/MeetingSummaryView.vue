@@ -54,7 +54,7 @@ async function fetchScriptText(id: string) {
 }
 
 // 2. 요약 요청
-async function generateSummary(scriptId: string) {
+async function generateSummary(scriptId: string | undefined) {
   try {
     isProcessing.value = true
     errorMessage.value = null
@@ -63,7 +63,7 @@ async function generateSummary(scriptId: string) {
     const response = await fetch(`${apiBaseUrl}/openai/summary/${scriptId}`, {
       method: 'POST',
       headers: {
-        'Accept': 'text/event-stream',
+        Accept: 'text/event-stream',
       },
     })
 
@@ -80,7 +80,7 @@ async function generateSummary(scriptId: string) {
       if (done) break
 
       const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n').filter(line => line.startsWith('data:'))
+      const lines = chunk.split('\n').filter((line) => line.startsWith('data:'))
 
       for (const line of lines) {
         const clean = line.replace('data:', '').trim()
@@ -114,7 +114,7 @@ async function generateSummary(scriptId: string) {
   }
 }
 function isKorean(text: string): boolean {
-  return /[가-힣]/.test(text);
+  return /[가-힣]/.test(text)
 }
 function splitBySpeaker(text: string): string {
   const rawSentences = text
@@ -152,9 +152,6 @@ function splitBySpeaker(text: string): string {
   return result.join('')
 }
 
-
-
-
 onMounted(() => {
   if (scriptId) {
     fetchScriptText(scriptId)
@@ -174,7 +171,7 @@ onMounted(() => {
       <div class="progress-indicator"></div>
       <p class="progress-text">요약을 생성 중입니다...</p>
     </div>
-    
+
     <div v-if="errorMessage" class="alert error">
       <div class="alert-icon">error</div>
       <div class="alert-content">{{ errorMessage }}</div>
@@ -182,7 +179,11 @@ onMounted(() => {
 
     <div v-if="summaryData.summary || summaryData.title" class="card-container">
       <!-- 회의 제목 및 날짜 -->
-      <div v-if="summaryData.title || summaryData.date" class="card header-card ai-glow" style="--delay: 0.2s">
+      <div
+        v-if="summaryData.title || summaryData.date"
+        class="card header-card ai-glow"
+        style="--delay: 0.2s"
+      >
         <div class="card-content">
           <div class="card-title-row">
             <span class="material-symbols-outlined">calendar_today</span>
@@ -211,11 +212,7 @@ onMounted(() => {
             <h3 class="card-title">논의사항</h3>
           </div>
           <ul class="card-list">
-            <li 
-              v-for="(item, i) in summaryData.discussions" 
-              :key="'n' + i" 
-              class="list-item"
-            >
+            <li v-for="(item, i) in summaryData.discussions" :key="'n' + i" class="list-item">
               <span class="list-icon chat">chat_bubble</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
@@ -231,11 +228,7 @@ onMounted(() => {
             <h3 class="card-title">결정사항</h3>
           </div>
           <ul class="card-list">
-            <li 
-              v-for="(item, i) in summaryData.decisions" 
-              :key="'d' + i" 
-              class="list-item"
-            >
+            <li v-for="(item, i) in summaryData.decisions" :key="'d' + i" class="list-item">
               <span class="list-icon number">{{ i + 1 }}</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
@@ -251,11 +244,7 @@ onMounted(() => {
             <h3 class="card-title">할 일</h3>
           </div>
           <ul class="card-list">
-            <li 
-              v-for="(item, i) in summaryData.actions" 
-              :key="'a' + i" 
-              class="list-item"
-            >
+            <li v-for="(item, i) in summaryData.actions" :key="'a' + i" class="list-item">
               <span class="list-icon check">check_box</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
@@ -271,11 +260,7 @@ onMounted(() => {
             <h3 class="card-title">미해결 이슈</h3>
           </div>
           <ul class="card-list">
-            <li 
-              v-for="(item, i) in summaryData.unresolved" 
-              :key="'u' + i" 
-              class="list-item"
-            >
+            <li v-for="(item, i) in summaryData.unresolved" :key="'u' + i" class="list-item">
               <span class="list-icon issue">report_problem</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
@@ -291,11 +276,7 @@ onMounted(() => {
             <h3 class="card-title">주요 키워드</h3>
           </div>
           <div class="chips-container">
-            <div 
-              v-for="(keyword, i) in summaryData.keywords" 
-              :key="i" 
-              class="chip"
-            >
+            <div v-for="(keyword, i) in summaryData.keywords" :key="i" class="chip">
               {{ keyword }}
             </div>
           </div>
@@ -309,7 +290,9 @@ onMounted(() => {
             <span class="material-symbols-outlined">description</span>
             <h3 class="card-title">전체 회의 내용</h3>
           </div>
-          <span class="material-icon expand-icon" :class="{ expanded: isExpanded }">expand_more</span>
+          <span class="material-icon expand-icon" :class="{ expanded: isExpanded }"
+            >expand_more</span
+          >
         </div>
         <div class="expansion-content" v-if="isExpanded">
           <p class="card-text" v-html="splitBySpeaker(scriptText)"></p>
@@ -331,7 +314,7 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* 부드러운 그림자 */
   margin: 0 auto;
   padding: 24px;
-  background-color: #F5F5F5; /* Material Design 배경색 */
+  background-color: #f5f5f5; /* Material Design 배경색 */
   color: rgba(0, 0, 0, 0.87); /* Material 기본 텍스트 색상 */
 }
 
@@ -358,17 +341,17 @@ onMounted(() => {
 .progress-indicator {
   width: 100%;
   height: 4px;
-  background-color: #E0E0E0;
+  background-color: #e0e0e0;
   position: relative;
   overflow: hidden;
 }
 
 .progress-indicator::after {
-  content: "";
+  content: '';
   position: absolute;
   height: 100%;
   width: 50%;
-  background-color: #2196F3; /* Material Primary */
+  background-color: #2196f3; /* Material Primary */
   animation: indeterminate 1.5s infinite linear;
   transform-origin: left;
 }
@@ -397,8 +380,8 @@ onMounted(() => {
 }
 
 .alert.error {
-  background-color: #FFEBEE; /* Material Red 50 */
-  color: #D32F2F; /* Material Red 700 */
+  background-color: #ffebee; /* Material Red 50 */
+  color: #d32f2f; /* Material Red 700 */
 }
 
 .alert-icon {
@@ -422,7 +405,9 @@ onMounted(() => {
 .card {
   background-color: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
   overflow: hidden;
 }
 
@@ -459,12 +444,12 @@ onMounted(() => {
 
 /* 헤더 카드 특별 스타일링 */
 .header-card {
-  border-left: 4px solid #2196F3; /* Material Primary */
+  border-left: 4px solid #2196f3; /* Material Primary */
 }
 
 /* 요약 카드 특별 스타일링 */
 .summary-card {
-  border-left: 4px solid #4CAF50; /* Material Green */
+  border-left: 4px solid #4caf50; /* Material Green */
 }
 
 /* Material Icon */
@@ -475,23 +460,23 @@ onMounted(() => {
 }
 
 .card-title-row .material-icon {
-  color: #00C853; /* 기본 아이콘을 연두색 계열로 */
+  color: #00c853; /* 기본 아이콘을 연두색 계열로 */
 }
 
 .summary-card .material-icon {
-  color: #4CAF50;
+  color: #4caf50;
 }
 .card-title-row .material-icon.keywords {
-  color: #2196F3;
+  color: #2196f3;
 }
 .card-title-row .material-icon.decision {
-  color: #7C4DFF;
+  color: #7c4dff;
 }
 .card-title-row .material-icon.action {
-  color: #FF9800;
+  color: #ff9800;
 }
 .card-title-row .material-icon.unresolved {
-  color: #FF3D00;
+  color: #ff3d00;
 }
 
 /* 칩 스타일링 (키워드) */
@@ -507,7 +492,7 @@ onMounted(() => {
   height: 32px;
   padding: 0 12px;
   border-radius: 16px;
-  background-color: #E0E0E0;
+  background-color: #e0e0e0;
   color: rgba(0, 0, 0, 0.87);
   font-size: 13px;
 }
@@ -523,7 +508,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   padding: 8px 0;
-  border-bottom: 1px solid #EEEEEE;
+  border-bottom: 1px solid #eeeeee;
 }
 
 .list-item:last-child {
@@ -537,7 +522,7 @@ onMounted(() => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #2196F3; /* Material Primary */
+  background-color: #2196f3; /* Material Primary */
   color: white;
   font-size: 12px;
   font-weight: 500;
@@ -546,11 +531,11 @@ onMounted(() => {
 }
 
 .list-item-number.discussion {
-  background-color: #9E9E9E; /* Material Grey */
+  background-color: #9e9e9e; /* Material Grey */
 }
 
 .list-item-number.issue {
-  background-color: #FF5722; /* Material Deep Orange */
+  background-color: #ff5722; /* Material Deep Orange */
 }
 
 .list-item-text {
@@ -581,18 +566,18 @@ onMounted(() => {
 
 .expansion-content {
   padding: 0 16px 16px;
-  border-top: 1px solid #EEEEEE;
+  border-top: 1px solid #eeeeee;
   white-space: pre-line;
 }
 
 /* 반응형 스타일링 */
 @media (max-width: 768px) {
   .meeting-summary {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 0 16px rgba(0,0,0,0.04); /* subtle 전체 음영 */
-}
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 0 16px rgba(0, 0, 0, 0.04); /* subtle 전체 음영 */
+  }
 }
 
 @keyframes fadeInBright {
@@ -618,17 +603,17 @@ onMounted(() => {
 }
 
 body {
-  background-color: #FAFAFA;
+  background-color: #fafafa;
 }
 .meeting-summary {
-  background-color: #FAFAFA;
+  background-color: #fafafa;
   padding: 32px;
   min-height: 100vh;
 }
 .card {
   background-color: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .list-icon {
@@ -644,11 +629,11 @@ body {
 }
 
 .list-icon.check {
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .list-icon.number {
-  background-color: #3F51B5;
+  background-color: #3f51b5;
   color: white;
   font-weight: 600;
   border-radius: 50%;
@@ -656,33 +641,33 @@ body {
 }
 
 .list-icon.chat {
-  color: #03A9F4;
+  color: #03a9f4;
 }
 
 .list-icon.issue {
-  color: #FF5722;
+  color: #ff5722;
 }
 .material-icon.title-icon {
   font-family: 'Material Icons';
   font-size: 22px;
-  color: #2196F3;
+  color: #2196f3;
   margin-right: 8px;
 }
 
 .summary-card .title-icon {
-  color: #4CAF50;
+  color: #4caf50;
 }
 .card-title-row .title-icon.keywords {
-  color: #3F51B5;
+  color: #3f51b5;
 }
 .card-title-row .title-icon.decisions {
-  color: #7C4DFF;
+  color: #7c4dff;
 }
 .card-title-row .title-icon.action {
-  color: #FF9800;
+  color: #ff9800;
 }
 .card-title-row .title-icon.unresolved {
-  color: #F44336;
+  color: #f44336;
 }
 .list-number {
   display: inline-flex;
@@ -699,20 +684,18 @@ body {
 }
 
 .card.decisions .list-number {
-  background-color: #7C4DFF; /* 퍼플 */
+  background-color: #7c4dff; /* 퍼플 */
 }
 
 .card.actions .list-number {
-  background-color: #FF9800; /* 주황 */
+  background-color: #ff9800; /* 주황 */
 }
 
 .card.discussions .list-number {
-  background-color: #42A5F5; /* 파랑 */
+  background-color: #42a5f5; /* 파랑 */
 }
 
 .card.unresolved .list-number {
-  background-color: #EF5350; /* 레드 */
+  background-color: #ef5350; /* 레드 */
 }
-
 </style>
-
