@@ -36,7 +36,7 @@ const router = createRouter({
     {
       path: '/script-list',
       name: 'script-list',
-      component: () => ScriptListView,
+      component: ScriptListView,
       meta: { requiresAuth: true },
     },
     // In your routes array, add the landing page route
