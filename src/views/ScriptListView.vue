@@ -126,6 +126,14 @@ const newMeetingName = ref('')
 const showNameRequiredWarning = ref(false)
 
 const viewScriptDetail = (scriptId: string) => {
+  // Find the script with matching ID
+  const selectedScript = scripts.value.find((script) => script.id === scriptId)
+
+  // Save script name to localStorage if found
+  if (selectedScript) {
+    localStorage.setItem('new_meeting_name', selectedScript.name || '제목 없음')
+  }
+
   router.push({ name: 'script', params: { id: scriptId } })
 }
 
@@ -287,7 +295,7 @@ onMounted(() => {
 .user-display {
   position: absolute;
   top: 24px;
-  right: 24px;
+  left: 0px;
   background: #fff;
   color: #5f6368;
   padding: 4px 16px;

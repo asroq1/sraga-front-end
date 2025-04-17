@@ -1,7 +1,7 @@
 <template>
   <div class="chat-section">
     <div class="chat-header">
-      <h3>회의 내용봇</h3>
+      <h3>미링이</h3>
     </div>
 
     <div class="chat-messages" ref="messagesContainer">

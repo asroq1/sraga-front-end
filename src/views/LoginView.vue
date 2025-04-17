@@ -36,9 +36,9 @@ async function handleRegister() {
   <div class="login-view">
     <div class="login-card">
       <div class="login-header">
-        <div class="logo">SRAGA</div>
+        <div class="logo">Miring</div>
         <h1 class="title">로그인</h1>
-        <p class="subtitle">SRAGA를 사용하기 위해 이름을 입력해주세요.</p>
+        <p class="subtitle">Miring을 사용하기 위해 이름을 입력해주세요.</p>
       </div>
 
       <div class="form-field">
@@ -72,7 +72,7 @@ async function handleRegister() {
       </button>
 
       <div class="login-footer">
-        <p>© 2025 SRAGA. All rights reserved.</p>
+        <p>© 2025 Miring. All rights reserved.</p>
       </div>
     </div>
   </div>
