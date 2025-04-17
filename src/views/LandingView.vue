@@ -4,7 +4,7 @@
     <header class="sticky top-0 z-10 bg-white shadow-sm">
       <div class="container mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex items-center">
-          <h1 class="text-2xl font-bold text-primary">SRAGA</h1>
+          <h1 class="text-2xl font-bold text-primary">Miring</h1>
         </div>
         <nav class="hidden md:flex space-x-6">
           <a href="#features" class="text-gray-700 hover:text-primary transition-colors">기능</a>
@@ -48,8 +48,8 @@
         <div class="md:w-1/2 mb-10 md:mb-0">
           <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">더 넓은 세상을 향해</h2>
           <p class="text-xl text-gray-700 mb-8">
-            SRAGA와 함께 언어의 장벽을 넘어 세계와 소통하세요. 정확하고 자연스러운 번역으로 당신의
-            세계를 확장하세요.
+            Miring이와 함께 언어의 장벽을 넘어 세계와 소통하세요. 정확하고 자연스러운 번역으로
+            당신의 세계를 확장하세요.
           </p>
           <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
             <button
@@ -106,7 +106,7 @@
     <!-- Features Section -->
     <section id="features" class="py-20 bg-white">
       <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold text-center mb-16">SRAGA의 특별한 기능</h2>
+        <h2 class="text-3xl font-bold text-center mb-16">Miring의 특별한 기능</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div class="flex flex-col items-center text-center">
             <div
@@ -114,9 +114,9 @@
             >
               <globe-icon class="w-10 h-10 text-primary" />
             </div>
-            <h3 class="text-xl font-semibold mb-4">100+ 언어 지원</h3>
+            <h3 class="text-xl font-semibold mb-4">10+ 언어 지원</h3>
             <p class="text-gray-600">
-              전 세계 100개 이상의 언어를 지원하여 어디서든 소통할 수 있습니다.
+              전 세계 10개 이상의 언어를 지원하여 어디서든 소통할 수 있습니다.
             </p>
           </div>
           <div class="flex flex-col items-center text-center">
@@ -138,7 +138,7 @@
             </div>
             <h3 class="text-xl font-semibold mb-4">이미지 번역</h3>
             <p class="text-gray-600">
-              카메라로 텍스트를 찍기만 하면 즉시 번역해주는 이미지 인식 기능을 제공합니다.
+              카메라로 텍스트를 찍기만 하면 즉시 해석해주는 이미지 인식 기능을 제공합니다.
             </p>
           </div>
         </div>
@@ -157,7 +157,7 @@
               1
             </div>
             <h3 class="text-xl font-semibold mb-4">앱 다운로드</h3>
-            <p class="text-gray-600">App Store 또는 Google Play에서 SRAGA 앱을 다운로드하세요.</p>
+            <p class="text-gray-600">App Store 또는 Google Play에서 Miring 앱을 다운로드하세요.</p>
           </div>
           <div class="flex flex-col items-center text-center">
             <div
@@ -195,9 +195,9 @@
     <!-- Download Section -->
     <section id="download" class="py-20 bg-primary">
       <div class="container mx-auto px-4 text-center">
-        <h2 class="text-3xl font-bold text-white mb-8">지금 바로 SRAGA를 경험해보세요</h2>
+        <h2 class="text-3xl font-bold text-white mb-8">지금 바로 Miring을 경험해보세요</h2>
         <p class="text-xl text-white opacity-90 mb-10 max-w-2xl mx-auto">
-          더 넓은 세상과의 소통을 시작하세요. SRAGA와 함께라면 언어는 더 이상 장벽이 아닙니다.
+          더 넓은 세상과의 소통을 시작하세요. Miring과 함께라면 언어는 더 이상 장벽이 아닙니다.
         </p>
         <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
           <button
@@ -221,7 +221,7 @@
       <div class="container mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 class="text-xl font-bold mb-4">SRAGA</h3>
+            <h3 class="text-xl font-bold mb-4">Miring</h3>
             <p class="text-gray-400">더 넓은 세상을 향해</p>
           </div>
           <div>
@@ -264,7 +264,7 @@
         <div
           class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center"
         >
-          <p class="text-gray-400">© 2025 SRAGA. All rights reserved.</p>
+          <p class="text-gray-400">© 2025 Miring. All rights reserved.</p>
           <div class="flex space-x-4 mt-4 md:mt-0">
             <a href="#" class="text-gray-400 hover:text-white transition-colors">
               <facebook-icon class="w-6 h-6" />

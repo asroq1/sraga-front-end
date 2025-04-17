@@ -25,7 +25,7 @@ function navigateTo(path: string) {
     <nav v-if="route.name !== 'login' && route.name !== 'landing'" class="side-nav">
       <div class="nav-brand">
         <span class="material-icon brand-icon">record_voice_over</span>
-        <span class="brand-name">SRAGA</span>
+        <span class="brand-name">Miring</span>
       </div>
 
       <div class="nav-items">
