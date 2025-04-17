@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { registerUser } from '../services/userService'
+import { checkAndRegisterUser } from '../services/userService'
 
 const router = useRouter()
 const userName = ref('')
@@ -18,7 +18,7 @@ async function handleRegister() {
     isRegistering.value = true
     error.value = ''
 
-    await registerUser(userName.value.trim())
+    await checkAndRegisterUser(userName.value.trim())
     router.push('/script-list')
   } catch (err) {
     error.value = '등록 중 오류가 발생했습니다. 다시 시도해주세요.'
@@ -37,14 +37,8 @@ async function handleRegister() {
 
       <div class="form-group">
         <label for="user-name">이름</label>
-        <input
-          id="user-name"
-          v-model="userName"
-          type="text"
-          placeholder="이름을 입력하세요"
-          :disabled="isRegistering"
-          @keyup.enter="handleRegister"
-        />
+        <input id="user-name" v-model="userName" type="text" placeholder="이름을 입력하세요" :disabled="isRegistering"
+          @keyup.enter="handleRegister" />
       </div>
 
       <p v-if="error" class="error-message">{{ error }}</p>
@@ -87,10 +81,17 @@ async function handleRegister() {
 
 .form-group input {
   width: 100%;
-  padding: 10px;
+  padding: 10px 12px;
   border: 1px solid #dadce0;
   border-radius: 4px;
   font-size: 16px;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
 .error-message {

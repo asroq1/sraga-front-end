@@ -10,6 +10,7 @@
     },
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "bundler",
-    "module": "ESNext"
+    "module": "ESNext",
+    "allowJs": true // Add this line
   }
 }

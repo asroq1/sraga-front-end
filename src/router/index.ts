@@ -5,6 +5,7 @@ import MeetingSummaryView from '../views/MeetingSummaryView.vue'
 import LoginView from '../views/LoginView.vue'
 import ScriptListView from '@/views/ScriptListView.vue'
 import { loadUserFromStorage } from '../services/userService'
+import LandingView from '../views/LandingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,12 @@ const router = createRouter({
       component: () => ScriptListView,
       meta: { requiresAuth: true },
     },
+    // In your routes array, add the landing page route
+    {
+      path: '/',
+      name: 'landing',
+      component: LandingView,
+    },
   ],
 })
 
@@ -47,8 +54,6 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !user) {
     next('/login')
-  } else if (to.path === '/login' && user) {
-    next('/')
   } else {
     next()
   }
