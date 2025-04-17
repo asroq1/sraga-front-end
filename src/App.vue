@@ -7,6 +7,7 @@ const route = useRoute()
 const router = useRouter()
 
 const activeTab = computed(() => {
+  if (route.path === '/') return 'landing'
   if (route.path === '/script-list') return 'home'
   if (route.path === '/receipt') return 'receipt'
   if (route.path === '/meeting-summary') return 'meeting'
@@ -23,9 +24,7 @@ function navigateTo(path: string) {
     <main class="main-content">
       <RouterView />
     </main>
-
-    <!-- Only show navigation when user is authenticated -->
-    <nav v-if="route.name !== 'login'" class="bottom-nav">
+    <nav v-if="route.name !== 'login' && route.name !== 'landing'" class="bottom-nav">
       <button
         class="nav-item"
         :class="{ active: activeTab === 'home' }"
