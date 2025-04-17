@@ -1,7 +1,9 @@
 import { ref } from 'vue'
 
 // API 기본 URL
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const URI_API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const URI_USER_REGISTER = `${URI_API_BASE}/user/register`
+const URI_USER_GET_BY_NAME = `${URI_API_BASE}/user`
 
 // 사용자 인터페이스 정의
 export interface User {
@@ -47,7 +49,7 @@ export function saveUserToStorage(user: User): void {
  */
 export async function registerUser(name: string): Promise<User> {
   try {
-    const response = await fetch(`${apiBaseUrl}/user/register`, {
+    const response = await fetch(URI_USER_REGISTER, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,17 +71,49 @@ export async function registerUser(name: string): Promise<User> {
 }
 
 /**
+ * 사용자 정보 확인
+ * @returns
+ */
+export async function getUserByName(name: string): Promise<User> {
+  try {
+    const response = await fetch(URI_USER_GET_BY_NAME + '/' + name, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`)
+    }
+
+    const user: User = await response.json()
+    saveUserToStorage(user)
+    return user
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
  * 사용자 정보 확인 및 필요시 등록
  */
-export async function checkAndRegisterUser(): Promise<User> {
-  // 로컬 스토리지에서 사용자 정보 확인
-  const storedUser = loadUserFromStorage()
-
-  if (storedUser) {
-    currentUser.value = storedUser
-    return storedUser
-  }
-
-  // 사용자 정보가 없으면 등록 필요
-  throw new Error('User registration required')
+export async function checkAndRegisterUser(name: string): Promise<User> {
+  // 사용자 있는지 확인
+  const user: User = await getUserByName(name)
+    .then((user: User) => {
+      return user
+    })
+    .catch((error: any) => {
+      // 없으면 등록
+      return registerUser(name)
+    })
+    .then((user: User) => {
+      return user
+    })
+    .catch((error: any) => {
+      throw error
+    })
+  // User 리턴
+  return user
 }
