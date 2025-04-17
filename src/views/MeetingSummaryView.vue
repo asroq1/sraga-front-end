@@ -54,7 +54,7 @@ async function fetchScriptText(id: string) {
 }
 
 // 2. 요약 요청
-async function generateSummary(scriptId: string | undefined) {
+async function generateSummary(scriptId: string | null) {
   try {
     isProcessing.value = true
     errorMessage.value = null
