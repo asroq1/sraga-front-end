@@ -99,21 +99,19 @@ export async function getUserByName(name: string): Promise<User> {
  * 사용자 정보 확인 및 필요시 등록
  */
 export async function checkAndRegisterUser(name: string): Promise<User> {
-  // 사용자 있는지 확인
-  const user: User = await getUserByName(name)
-    .then((user: User) => {
-      return user
-    })
-    .catch((error: any) => {
-      // 없으면 등록
-      return registerUser(name)
-    })
-    .then((user: User) => {
-      return user
-    })
-    .catch((error: any) => {
-      throw error
-    })
-  // User 리턴
-  return user
+  try {
+    // 먼저 사용자 조회 시도
+    const existingUser = await getUserByName(name)
+    return existingUser
+  } catch (error) {
+    // 사용자가 없는 경우 새로 등록
+    if (error instanceof Error && error.message.includes('404')) {
+      const newUser = await registerUser(name)
+      return newUser
+    }
+    // 다른 에러인 경우 상위로 전파
+    throw new Error(
+      `사용자 확인/등록 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`,
+    )
+  }
 }
