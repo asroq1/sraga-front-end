@@ -79,7 +79,6 @@ async function uploadReceipt() {
 
     const formData = new FormData()
 
-
     selectedFiles.value.forEach((file) => {
       formData.append(`files`, file)
     })
@@ -103,7 +102,6 @@ async function uploadReceipt() {
       const data = await response.json()
       receiptData.value = data
 
-
       if (data.receipt_ids && data.file_names) {
         generatedFiles.value = []
         for (let i = 0; i < data.receipt_ids.length; i++) {
@@ -113,26 +111,24 @@ async function uploadReceipt() {
           })
         }
       } else if (data.receipt_id && data.file_name) {
-
-        generatedFiles.value = [{
-          id: data.receipt_id,
-          name: data.file_name || 'receipt_report.docx'
-        }]
-
+        generatedFiles.value = [
+          {
+            id: data.receipt_id,
+            name: data.file_name || 'receipt_report.docx',
+          },
+        ]
       }
     } else {
       const blob = await response.blob()
 
-
       const url = URL.createObjectURL(blob)
-    
+
       const a = document.createElement('a')
       a.href = url
       a.download = inputFileName.value
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-
 
       const contentDisposition = response.headers.get('content-disposition')
       let fileName = 'receipt_report.docx'
@@ -142,7 +138,6 @@ async function uploadReceipt() {
           fileName = filenameMatch[1]
         }
       }
-
 
       const tempId = 'temp_' + Date.now()
       generatedFiles.value = [
@@ -213,7 +208,6 @@ async function downloadReceiptFile(receiptId: string, fileName: string) {
   }
 }
 
-
 // ✅ 수정된 부분: 404 에러 graceful하게 처리
 async function loadUserReceipts() {
   const userId = localStorage.getItem('userId')
@@ -229,13 +223,11 @@ async function loadUserReceipts() {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://3.39.195.183.nip.io'
     const response = await fetch(`${apiBaseUrl}/receipt/my/${userId}`)
 
-
     if (response.status === 404) {
       userReceipts.value = []
       loadReceiptError.value = null // 에러 숨기기
       return
     }
-
 
     if (!response.ok) {
       throw new Error(`영수증 목록 조회 오류: ${response.status}`)
@@ -243,16 +235,18 @@ async function loadUserReceipts() {
 
     const data = await response.json()
 
-    
-
     if (Array.isArray(data)) {
-      userReceipts.value = data.map((item) => ({
-        id: item.id,
-        name: item.name || `영수증_${item.id}.docx`,
+      userReceipts.value = data
+        .map((item) => ({
+          id: item.id,
+          name: item.name || `영수증_${item.id}.docx`,
 
-        created_date: item.created_date
-      })) .sort((a, b) => new Date(b.created_date || '').getTime() - new Date(a.created_date || '').getTime())
-
+          created_date: item.created_date,
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.created_date || '').getTime() - new Date(a.created_date || '').getTime(),
+        )
     }
   } catch (error) {
     console.error('영수증 목록 조회 오류:', error)
@@ -308,16 +302,15 @@ onMounted(() => {
                   <span class="material-icon">close</span>
                 </button>
               </div>
-              <button 
-                v-if="selectedFiles.length > 1" 
-                class="btn-clear-all" 
-                @click="clearAllFiles" 
+              <button
+                v-if="selectedFiles.length > 1"
+                class="btn-clear-all"
+                @click="clearAllFiles"
                 :disabled="isUploading"
               >
                 모두 지우기
               </button>
             </div>
-
           </div>
 
           <div class="preview-section" v-if="previewUrls.length > 0">
@@ -332,10 +325,10 @@ onMounted(() => {
 
             <div class="actions">
               <div class="action-container">
-                <input 
-                  type="text" 
-                  v-model="inputFileName" 
-                  placeholder="파일명을 입력하세요" 
+                <input
+                  type="text"
+                  v-model="inputFileName"
+                  placeholder="파일명을 입력하세요"
                   class="name-input"
                   :disabled="isUploading"
                 />
@@ -375,8 +368,9 @@ onMounted(() => {
               </div>
             </div>
           </div> -->
-        </div> <!-- upload-scroll-wrapper 끝 -->
-      </div> 
+        </div>
+        <!-- upload-scroll-wrapper 끝 -->
+      </div>
 
       <!-- 오른쪽: 유저의 보고서서 목록 컨테이너 -->
       <div class="receipt-container">
@@ -388,19 +382,19 @@ onMounted(() => {
               목록 새로고침
             </button>
           </div>
-          
+
           <!-- 로딩 표시 -->
           <div v-if="isLoadingReceipts" class="loading-message">
             <div class="loading-spinner"></div>
             <p>보고서 목록 로딩 중...</p>
           </div>
-          
+
           <!-- 오류 메시지 -->
           <div v-if="loadReceiptError" class="error-message">
             <span class="material-icon">error</span>
             <p>{{ loadReceiptError }}</p>
           </div>
-          
+
           <!-- 영수증 목록 -->
 
           <div class="files-list">
@@ -415,7 +409,7 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-            
+
             <!-- 보고서가 없을 때 메시지 -->
             <div v-else-if="!isLoadingReceipts && !loadReceiptError" class="no-files-message">
               <span class="material-icon">folder_open</span>
@@ -423,9 +417,8 @@ onMounted(() => {
               <p class="sub-text">영수증을 분석하면 목록에 추가됩니다.</p>
             </div>
           </div>
-
-        </div> <!-- upload-scroll-wrapper 끝 -->
-
+        </div>
+        <!-- upload-scroll-wrapper 끝 -->
       </div>
     </div>
   </div>
@@ -834,8 +827,6 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-
-
 .files-list {
   display: flex;
   flex-direction: column;
@@ -984,4 +975,3 @@ onMounted(() => {
   }
 }
 </style>
-
