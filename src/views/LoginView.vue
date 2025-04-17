@@ -21,14 +21,19 @@ async function handleRegister() {
     // 사용자 등록 또는 조회
     await checkAndRegisterUser(userName.value.trim())
 
-    // 명시적으로 타임아웃을 추가하여 상태 업데이트가 완료될 시간을 줍니다
-    setTimeout(() => {
-      router.push('/script-list').catch((err) => {
-        console.error('라우팅 오류:', err)
-        // 라우팅 실패 시 직접 URL 변경
-        window.location.href = '/script-list'
+    // 라우팅 시도
+    router.push('/script-list').catch((err) => {
+      console.error('라우팅 오류:', err)
+      // 라우팅 실패 시 홈으로 이동 후 script-list로 이동 시도
+      router.push('/').then(() => {
+        setTimeout(() => {
+          router.push('/script-list')
+        }, 100)
+      }).catch(() => {
+        // 모든 라우팅 실패 시 직접 URL 변경
+        window.location.href = '/'
       })
-    }, 100)
+    })
   } catch (err) {
     error.value = '등록 중 오류가 발생했습니다. 다시 시도해주세요.'
     console.error('등록 오류:', err)
