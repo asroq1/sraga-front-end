@@ -18,15 +18,9 @@
         <div class="flex space-x-4">
           <button
             @click="navigateToLogin"
-            class="px-4 py-2 text-primary hover:bg-gray-100 rounded-md transition-colors"
-          >
-            로그인
-          </button>
-          <button
-            @click="navigateToSignup"
             class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
           >
-            회원가입
+            로그인
           </button>
         </div>
         <button @click="toggleMobileMenu" class="md:hidden text-gray-700">
@@ -59,7 +53,7 @@
           </p>
           <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
             <button
-              @click="navigateToSignup"
+              @click="navigateToLogin"
               class="px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors text-lg font-medium"
             >
               무료로 시작하기
@@ -288,7 +282,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import {
   Menu as MenuIcon,
@@ -304,9 +298,11 @@ import {
   Twitter as TwitterIcon,
   Instagram as InstagramIcon,
 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
 // State
 const mobileMenuOpen = ref(false)
+const router = useRouter()
 
 // Methods
 const toggleMobileMenu = () => {
@@ -315,12 +311,7 @@ const toggleMobileMenu = () => {
 
 const navigateToLogin = () => {
   // In a real app, this would navigate to the login page
-  alert('로그인 페이지로 이동합니다.')
-}
-
-const navigateToSignup = () => {
-  // In a real app, this would navigate to the signup page
-  alert('회원가입 페이지로 이동합니다.')
+  router.push('/login')
 }
 
 const scrollToFeatures = () => {
