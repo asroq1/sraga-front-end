@@ -3,14 +3,16 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+const scriptId = route.query.scriptId as string
+
 // const scriptId = 'F-k_LQcuSKKNOoYMkdiWcg'
-const scriptId = localStorage.getItem('scriptId')
-console.log(scriptId)
+
 const scriptText = ref('')
 const isExpanded = ref(false)
 
-const meetingText = ref('')
 const streamedSummary = ref('') // 실시간 출력용
+
+const meetingText = ref('')
 const summaryResult = ref<string | null>(null)
 
 const summaryData = reactive({
@@ -152,7 +154,12 @@ function splitBySpeaker(text: string): string {
   return result.join('')
 }
 
+
+
+
 onMounted(() => {
+
+
   if (scriptId) {
     fetchScriptText(scriptId)
   } else {
@@ -171,7 +178,7 @@ onMounted(() => {
       <div class="progress-indicator"></div>
       <p class="progress-text">요약을 생성 중입니다...</p>
     </div>
-
+    
     <div v-if="errorMessage" class="alert error">
       <div class="alert-icon">error</div>
       <div class="alert-content">{{ errorMessage }}</div>
@@ -179,11 +186,7 @@ onMounted(() => {
 
     <div v-if="summaryData.summary || summaryData.title" class="card-container">
       <!-- 회의 제목 및 날짜 -->
-      <div
-        v-if="summaryData.title || summaryData.date"
-        class="card header-card ai-glow"
-        style="--delay: 0.2s"
-      >
+      <div v-if="summaryData.title || summaryData.date" class="card header-card ai-glow" style="--delay: 0.2s">
         <div class="card-content">
           <div class="card-title-row">
             <span class="material-symbols-outlined">calendar_today</span>
@@ -205,31 +208,40 @@ onMounted(() => {
       </div>
 
       <!-- 논의사항 -->
-      <div v-if="summaryData.discussions.length" class="card ai-glow" style="--delay: 0.2s">
+      <div v-if="summaryData.discussions.length" class="card discussions ai-glow" style="--delay: 0.2s">
         <div class="card-content">
           <div class="card-title-row">
             <span class="material-symbols-outlined">chat</span>
             <h3 class="card-title">논의사항</h3>
           </div>
           <ul class="card-list">
-            <li v-for="(item, i) in summaryData.discussions" :key="'n' + i" class="list-item">
-              <span class="list-icon chat">chat_bubble</span>
+            <li 
+              v-for="(item, i) in summaryData.discussions" 
+              :key="'n' + i" 
+              class="list-item"
+            >
+              <span class="list-number discussions">{{ i + 1 }}</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
+
           </ul>
         </div>
       </div>
 
       <!-- 결정사항 -->
-      <div v-if="summaryData.decisions.length" class="card ai-glow" style="--delay: 0.2s">
+      <div v-if="summaryData.decisions.length" class="card decisions ai-glow" style="--delay: 0.2s">
         <div class="card-content">
           <div class="card-title-row">
             <span class="material-symbols-outlined">subject</span>
             <h3 class="card-title">결정사항</h3>
           </div>
           <ul class="card-list">
-            <li v-for="(item, i) in summaryData.decisions" :key="'d' + i" class="list-item">
-              <span class="list-icon number">{{ i + 1 }}</span>
+            <li 
+              v-for="(item, i) in summaryData.decisions" 
+              :key="'d' + i" 
+              class="list-item"
+            >
+              <span class="list-number decisions ">{{ i + 1 }}</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
           </ul>
@@ -237,15 +249,19 @@ onMounted(() => {
       </div>
 
       <!-- Action Items -->
-      <div v-if="summaryData.actions.length" class="card ai-glow" style="--delay: 0.2s">
+      <div v-if="summaryData.actions.length" class="card actions ai-glow" style="--delay: 0.2s">
         <div class="card-content">
           <div class="card-title-row">
             <span class="material-symbols-outlined">task_alt</span>
             <h3 class="card-title">할 일</h3>
           </div>
           <ul class="card-list">
-            <li v-for="(item, i) in summaryData.actions" :key="'a' + i" class="list-item">
-              <span class="list-icon check">check_box</span>
+            <li 
+              v-for="(item, i) in summaryData.actions" 
+              :key="'a' + i" 
+              class="list-item"
+            >
+              <span class="list-number actions">{{ i + 1 }}</span>
               <span class="list-item-text">{{ item }}</span>
             </li>
           </ul>
@@ -253,16 +269,20 @@ onMounted(() => {
       </div>
 
       <!-- 미해결 이슈 -->
-      <div v-if="summaryData.unresolved.length" class="card ai-glow" style="--delay: 0.2s">
+      <div v-if="summaryData.unresolved.length" class="card unresolved ai-glow" style="--delay: 0.2s">
         <div class="card-content">
           <div class="card-title-row">
             <span class="material-symbols-outlined">report</span>
             <h3 class="card-title">미해결 이슈</h3>
           </div>
           <ul class="card-list">
-            <li v-for="(item, i) in summaryData.unresolved" :key="'u' + i" class="list-item">
-              <span class="list-icon issue">report_problem</span>
-              <span class="list-item-text">{{ item }}</span>
+            <li 
+              v-for="(item, i) in summaryData.unresolved" 
+              :key="'u' + i" 
+              class="list-item"
+            >
+            <span class="list-number unresolved">{{ i + 1 }}</span>
+            <span class="list-item-text">{{ item }}</span>
             </li>
           </ul>
         </div>
@@ -276,7 +296,11 @@ onMounted(() => {
             <h3 class="card-title">주요 키워드</h3>
           </div>
           <div class="chips-container">
-            <div v-for="(keyword, i) in summaryData.keywords" :key="i" class="chip">
+            <div 
+              v-for="(keyword, i) in summaryData.keywords" 
+              :key="i" 
+              class="chip"
+            >
               {{ keyword }}
             </div>
           </div>
@@ -290,9 +314,7 @@ onMounted(() => {
             <span class="material-symbols-outlined">description</span>
             <h3 class="card-title">전체 회의 내용</h3>
           </div>
-          <span class="material-icon expand-icon" :class="{ expanded: isExpanded }"
-            >expand_more</span
-          >
+          <span class="material-icon expand-icon" :class="{ expanded: isExpanded }">expand_more</span>
         </div>
         <div class="expansion-content" v-if="isExpanded">
           <p class="card-text" v-html="splitBySpeaker(scriptText)"></p>
@@ -314,7 +336,7 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* 부드러운 그림자 */
   margin: 0 auto;
   padding: 24px;
-  background-color: #f5f5f5; /* Material Design 배경색 */
+  background-color: #F5F5F5; /* Material Design 배경색 */
   color: rgba(0, 0, 0, 0.87); /* Material 기본 텍스트 색상 */
 }
 
@@ -341,17 +363,17 @@ onMounted(() => {
 .progress-indicator {
   width: 100%;
   height: 4px;
-  background-color: #e0e0e0;
+  background-color: #E0E0E0;
   position: relative;
   overflow: hidden;
 }
 
 .progress-indicator::after {
-  content: '';
+  content: "";
   position: absolute;
   height: 100%;
   width: 50%;
-  background-color: #2196f3; /* Material Primary */
+  background-color: #2196F3; /* Material Primary */
   animation: indeterminate 1.5s infinite linear;
   transform-origin: left;
 }
@@ -380,8 +402,8 @@ onMounted(() => {
 }
 
 .alert.error {
-  background-color: #ffebee; /* Material Red 50 */
-  color: #d32f2f; /* Material Red 700 */
+  background-color: #FFEBEE; /* Material Red 50 */
+  color: #D32F2F; /* Material Red 700 */
 }
 
 .alert-icon {
@@ -405,9 +427,7 @@ onMounted(() => {
 .card {
   background-color: white;
   border-radius: 12px;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 1px 2px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
   overflow: hidden;
 }
 
@@ -444,12 +464,12 @@ onMounted(() => {
 
 /* 헤더 카드 특별 스타일링 */
 .header-card {
-  border-left: 4px solid #2196f3; /* Material Primary */
+  border-left: 4px solid #2196F3; /* Material Primary */
 }
 
 /* 요약 카드 특별 스타일링 */
 .summary-card {
-  border-left: 4px solid #4caf50; /* Material Green */
+  border-left: 4px solid #4CAF50; /* Material Green */
 }
 
 /* Material Icon */
@@ -460,23 +480,23 @@ onMounted(() => {
 }
 
 .card-title-row .material-icon {
-  color: #00c853; /* 기본 아이콘을 연두색 계열로 */
+  color: #00C853; /* 기본 아이콘을 연두색 계열로 */
 }
 
 .summary-card .material-icon {
-  color: #4caf50;
+  color: #4CAF50;
 }
 .card-title-row .material-icon.keywords {
-  color: #2196f3;
+  color: #2196F3;
 }
 .card-title-row .material-icon.decision {
-  color: #7c4dff;
+  color: #7C4DFF;
 }
 .card-title-row .material-icon.action {
-  color: #ff9800;
+  color: #FF9800;
 }
 .card-title-row .material-icon.unresolved {
-  color: #ff3d00;
+  color: #FF3D00;
 }
 
 /* 칩 스타일링 (키워드) */
@@ -492,7 +512,7 @@ onMounted(() => {
   height: 32px;
   padding: 0 12px;
   border-radius: 16px;
-  background-color: #e0e0e0;
+  background-color: #f5f3f3;
   color: rgba(0, 0, 0, 0.87);
   font-size: 13px;
 }
@@ -508,7 +528,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   padding: 8px 0;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid #EEEEEE;
 }
 
 .list-item:last-child {
@@ -522,7 +542,7 @@ onMounted(() => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background-color: #2196f3; /* Material Primary */
+  background-color: #2196F3; /* Material Primary */
   color: white;
   font-size: 12px;
   font-weight: 500;
@@ -531,11 +551,11 @@ onMounted(() => {
 }
 
 .list-item-number.discussion {
-  background-color: #9e9e9e; /* Material Grey */
+  background-color: #9E9E9E; /* Material Grey */
 }
 
 .list-item-number.issue {
-  background-color: #ff5722; /* Material Deep Orange */
+  background-color: #FF5722; /* Material Deep Orange */
 }
 
 .list-item-text {
@@ -566,18 +586,18 @@ onMounted(() => {
 
 .expansion-content {
   padding: 0 16px 16px;
-  border-top: 1px solid #eeeeee;
+  border-top: 1px solid #EEEEEE;
   white-space: pre-line;
 }
 
 /* 반응형 스타일링 */
 @media (max-width: 768px) {
   .meeting-summary {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 0 16px rgba(0, 0, 0, 0.04); /* subtle 전체 음영 */
-  }
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 0 16px rgba(0,0,0,0.04); /* subtle 전체 음영 */
+}
 }
 
 @keyframes fadeInBright {
@@ -603,17 +623,17 @@ onMounted(() => {
 }
 
 body {
-  background-color: #fafafa;
+  background-color: #FAFAFA;
 }
 .meeting-summary {
-  background-color: #fafafa;
+  background-color: #FAFAFA;
   padding: 32px;
   min-height: 100vh;
 }
 .card {
   background-color: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 .list-icon {
@@ -629,11 +649,11 @@ body {
 }
 
 .list-icon.check {
-  color: #4caf50;
+  color: #4CAF50;
 }
 
 .list-icon.number {
-  background-color: #3f51b5;
+  background-color: #3F51B5;
   color: white;
   font-weight: 600;
   border-radius: 50%;
@@ -641,33 +661,33 @@ body {
 }
 
 .list-icon.chat {
-  color: #03a9f4;
+  color: #03A9F4;
 }
 
 .list-icon.issue {
-  color: #ff5722;
+  color: #FF5722;
 }
 .material-icon.title-icon {
   font-family: 'Material Icons';
   font-size: 22px;
-  color: #2196f3;
+  color: #2196F3;
   margin-right: 8px;
 }
 
 .summary-card .title-icon {
-  color: #4caf50;
+  color: #4CAF50;
 }
 .card-title-row .title-icon.keywords {
-  color: #3f51b5;
+  color: #3F51B5;
 }
 .card-title-row .title-icon.decisions {
-  color: #7c4dff;
+  color: #7C4DFF;
 }
 .card-title-row .title-icon.action {
-  color: #ff9800;
+  color: #FF9800;
 }
 .card-title-row .title-icon.unresolved {
-  color: #f44336;
+  color: #F44336;
 }
 .list-number {
   display: inline-flex;
@@ -683,19 +703,46 @@ body {
   flex-shrink: 0;
 }
 
-.card.decisions .list-number {
-  background-color: #7c4dff; /* 퍼플 */
+
+.list-number.discussions {
+  background-color: #FFEBEE; /* 연한 빨강 */
+  color: #E53935;             /* 진한 빨강 */
 }
 
-.card.actions .list-number {
-  background-color: #ff9800; /* 주황 */
+.list-number.decisions {
+  background-color: #EDE7F6; /* 연한 보라 */
+  color: #673AB7;             /* 진한 보라 */
 }
 
-.card.discussions .list-number {
-  background-color: #42a5f5; /* 파랑 */
+.list-number.actions {
+  background-color: #FFF3E0; /* 연한 주황 */
+  color: #FB8C00;             /* 진한 주황 */
 }
 
-.card.unresolved .list-number {
-  background-color: #ef5350; /* 레드 */
+.list-number.unresolved {
+  background-color: #FFEBEE; /* 연한 빨강 */
+  color: #E53935;             /* 진한 빨강 */
 }
+
+/* 논의사항 (파랑 계열) */
+.card.discussions .material-symbols-outlined {
+  color: #E53935;
+}
+
+/* 결정사항 (보라 계열) */
+.card.decisions .material-symbols-outlined {
+  color: #673AB7;
+}
+
+/* 할 일 (주황 계열) */
+.card.actions .material-symbols-outlined {
+  color: #FB8C00;
+}
+
+/* 미해결 이슈 (빨강 계열) */
+.card.unresolved .material-symbols-outlined {
+  color: #E53935;
+}
+
 </style>
+
