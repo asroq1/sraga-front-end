@@ -21,19 +21,8 @@ async function handleRegister() {
     // 사용자 등록 또는 조회
     await checkAndRegisterUser(userName.value.trim())
 
-    // 라우팅 시도
-    router.push('/script-list').catch((err) => {
-      console.error('라우팅 오류:', err)
-      // 라우팅 실패 시 홈으로 이동 후 script-list로 이동 시도
-      // router.push('/').then(() => {
-      //   setTimeout(() => {
-      //     router.push('/script-list')
-      //   }, 100)
-      // }).catch(() => {
-      //   // 모든 라우팅 실패 시 직접 URL 변경
-      //   window.location.href = '/'
-      // })
-    })
+    // 배포 환경에서는 window.location.href를 사용하여 직접 페이지 이동
+    window.location.href = '/script-list'
   } catch (err) {
     error.value = '등록 중 오류가 발생했습니다. 다시 시도해주세요.'
     console.error('등록 오류:', err)
