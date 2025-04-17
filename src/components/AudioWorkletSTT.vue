@@ -1,50 +1,54 @@
 <template>
   <div class="audio-worklet-stt">
     <div class="header">
-      <h2>{{ chatTitle }}</h2>
-      <div class="nav-buttons"></div>
+      <div class="header-title">
+        <span class="material-icon header-icon">record_voice_over</span>
+        <h2>{{ chatTitle }}</h2>
+      </div>
       <div class="controls">
-        <div class="language-selector">
-          <label for="language-select">입력 언어:</label>
-          <select id="language-select" v-model="selectedLanguage" class="select-input">
-            <option v-for="lang in languages" :key="lang.code" :value="lang.code">
-              {{ lang.name }}
-            </option>
-          </select>
+        <div class="language-controls">
+          <div class="language-selector">
+            <label for="language-select">입력 언어:</label>
+            <select id="language-select" v-model="selectedLanguage" class="select-input">
+              <option v-for="lang in languages" :key="lang.code" :value="lang.code">
+                {{ lang.name }}
+              </option>
+            </select>
+          </div>
+
+          <button class="btn-icon" @click="switchLanguages" title="언어 교환">
+            <span class="material-icon">swap_horiz</span>
+          </button>
+
+          <div class="language-selector">
+            <label for="translation-language-select">번역 언어:</label>
+            <select
+              id="translation-language-select"
+              v-model="translatedLanguage"
+              class="select-input"
+            >
+              <option v-for="lang in languages" :key="lang.code" :value="lang.code">
+                {{ lang.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
-        <!-- 언어 교환 버튼 추가 -->
-        <button class="btn-icon" @click="switchLanguages" title="언어 교환">
-          <span class="material-icon">swap_horiz</span>
-        </button>
-
-        <!-- 번역 언어 선택기 추가 -->
-        <div class="language-selector">
-          <label for="translation-language-select">번역 언어:</label>
-          <select
-            id="translation-language-select"
-            v-model="translatedLanguage"
-            class="select-input"
-          >
-            <option v-for="lang in languages" :key="lang.code" :value="lang.code">
-              {{ lang.name }}
-            </option>
-          </select>
+        <div class="action-buttons">
+          <button class="btn-secondary" @click="exitMeeting">
+            <span class="material-icon">exit_to_app</span> 회의 나가기
+          </button>
+          <button class="btn-primary" @click="startRecording" :disabled="isRecording">
+            <span class="material-icon">mic</span> 시작
+          </button>
+          <button class="btn-exit" @click="stopRecording" :disabled="!isRecording">
+            <span class="material-icon">stop</span> 중지
+          </button>
         </div>
-        <!-- 회의 나가기 버튼 -->
-        <button class="btn-secondary" @click="exitMeeting">
-          <span class="material-icon">exit_to_app</span> 회의 나가기
-        </button>
-        <button class="btn-primary" @click="startRecording" :disabled="isRecording">
-          <span class="material-icon">mic</span> 시작
-        </button>
-        <button class="btn-exit" @click="stopRecording" :disabled="!isRecording">
-          <span class="material-icon">stop</span> 중지
-        </button>
       </div>
     </div>
 
-    <div class="chat-container flex flex-row">
+    <div class="chat-container">
       <div class="messages" ref="messagesContainer">
         <!-- 메시지 기록 표시 -->
         <div
@@ -76,7 +80,6 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import MeetingSummary from './MeetingSummary.vue'
@@ -602,7 +605,7 @@ onBeforeUnmount(() => {
   }
 })
 </script>
-
+<!--
 <style scoped>
 /* 구글 머티리얼 디자인 스타일 적용 */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
@@ -929,5 +932,382 @@ button {
 
 .btn-exit:hover {
   background-color: #c82333;
+}
+</style> -->
+
+<style scoped>
+/* 구글 머티리얼 디자인 스타일 적용 */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+/* 기본 컨테이너 스타일 */
+.audio-worklet-stt {
+  font-family: 'Roboto', 'Noto Sans KR', sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #202124;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 3px 0 rgba(60, 64, 67, 0.3),
+    0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+/* 헤더 스타일 */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #dadce0;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  font-size: 28px;
+  color: #1a73e8;
+}
+
+h2 {
+  color: #202124;
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  color: #5f6368;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 컨트롤 영역 스타일 */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.language-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* 버튼 스타일 */
+button {
+  font-family: 'Roboto', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 36px;
+}
+
+.btn-primary {
+  background-color: #1a73e8;
+  color: white;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: #1765cc;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.4);
+}
+
+.btn-primary:disabled {
+  background-color: #dadce0;
+  color: #5f6368;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #1a73e8;
+  border: 1px solid #dadce0;
+}
+
+.btn-secondary:hover {
+  background-color: #f1f3f4;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.2);
+}
+
+.btn-secondary:disabled {
+  color: #5f6368;
+  border-color: #dadce0;
+  cursor: not-allowed;
+}
+
+.btn-text {
+  background: none;
+  color: #1a73e8;
+  padding: 0 8px;
+  height: 32px;
+}
+
+.btn-text:hover {
+  background-color: rgba(26, 115, 232, 0.04);
+}
+
+.btn-icon {
+  background: none;
+  color: #5f6368;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.btn-icon:hover {
+  background-color: rgba(95, 99, 104, 0.08);
+  color: #202124;
+}
+
+.btn-exit {
+  background-color: #ea4335;
+  color: white;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+}
+
+.btn-exit:hover {
+  background-color: #d93025;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.4);
+}
+
+.btn-exit:disabled {
+  background-color: #fadad9;
+  color: #5f6368;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* 아이콘 스타일 */
+.material-icon {
+  font-family: 'Material Icons';
+  font-size: 20px;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 언어 선택기 스타일 */
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.language-selector label {
+  color: #5f6368;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.select-input {
+  background-color: white;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #202124;
+  min-width: 120px;
+  height: 36px;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.select-input:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* 채팅 컨테이너 스타일 */
+.chat-container {
+  background-color: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  height: 400px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+}
+
+.messages {
+  flex: 2;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-right: 1px solid #dadce0;
+}
+
+.meeting-summary {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 메시지 스타일 */
+.message {
+  max-width: 85%;
+  margin-bottom: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message.user {
+  align-self: flex-end;
+}
+
+.message.assistant {
+  align-self: flex-start;
+}
+
+.message-content {
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+}
+
+.message.user .message-content {
+  background-color: #e8f0fe;
+  color: #174ea6;
+}
+
+.message.user.interim .message-content {
+  background-color: #f1f3f4;
+  color: #5f6368;
+  font-style: italic;
+}
+
+.message.assistant .message-content {
+  background-color: #f1f3f4;
+  color: #5f6368;
+}
+
+.original-text {
+  margin-bottom: 4px;
+}
+
+.translated-text {
+  font-size: 0.9em;
+  color: #5f6368;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+/* 로그 섹션 스타일 */
+.log-section {
+  background-color: white;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f1f3f4;
+  border-bottom: 1px solid #dadce0;
+}
+
+.log-container {
+  margin: 0;
+  padding: 16px;
+  height: 150px;
+  overflow-y: auto;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5f6368;
+  background-color: #ffffff;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .audio-worklet-stt {
+    padding: 16px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .language-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .language-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .select-input {
+    width: 100%;
+  }
+
+  .chat-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .messages {
+    height: 300px;
+    border-right: none;
+    border-bottom: 1px solid #dadce0;
+  }
+
+  .meeting-summary {
+    height: 300px;
+  }
 }
 </style>
